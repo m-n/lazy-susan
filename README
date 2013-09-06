@@ -9,14 +9,11 @@ package.
 
 We intend to make the following easy to implement.
 
-1. Synonym symbols.
-2. Package local package designators
+1. Package local package designators
+2. Synonym symbols.
 3. Redefinition of constituent traits
    (e.g. treat #\: as something other than a package seperator.)
-4.
 
 Out of scope:
 
 1. Unordered reading, e.g. foo.bar -> (bar foo)
-
-2.
