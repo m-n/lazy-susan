@@ -1,22 +1,22 @@
-;;;; aspirin.asd
+;;;; lazy-susan.asd
 
-(asdf:defsystem #:aspirin
+(asdf:defsystem #:lazy-susan
   :serial t
   :description "A readtable which provides more flexible symbol reading"
   :author "Matt Niemeir <matt.niemeir@gmail.com>"
   :license "BSD 2-clause"
   :depends-on (#:mcn-utils)
   :components ((:file "package")
-               (:file "aspirin")))
+               (:file "lazy-susan")))
 
 
-(asdf:defsystem #:aspirin-test
+(asdf:defsystem #:lazy-susan-test
   :serial t
-  :depends-on (:aspirin)
+  :depends-on (:lazy-susan)
   :components ((:file tests)))
 
 (defmethod asdf:perform ((o asdf:test-op)
-                         (c (eql (asdf:find-system :aspirin))))
-  (asdf:operate 'load-op :aspirin-test)
+                         (c (eql (asdf:find-system :lazy-susan))))
+  (asdf:operate 'load-op :lazy-susan-test)
   (funcall (intern (symbol-name :run-tests)
-                   (find-package :aspirin-test))))
+                   (find-package :lazy-susan-test))))

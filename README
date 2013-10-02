@@ -3,7 +3,7 @@ More flexible symbol reading by way of a readtable.
 This is implemented by creating a new readtable rather than
 redifining Common Lisp functions. Because of this, all you
 need to do to take advantage of the added flexibility is
-(aspirin:in-syntax aspirin:*flexible-readtable*) at the top
+(lazy-susan:in-syntax lazy-susan:*flexible-readtable*) at the top
 of your files -- you don't have to abandon :USEinging the CL
 package.
 

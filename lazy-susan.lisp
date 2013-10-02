@@ -1,6 +1,6 @@
-;;;; aspirin.lisp
+;;;; lazy-susan.lisp
 
-(in-package #:aspirin)
+(in-package #:lazy-susan)
 
 (syntax-bind ()
   (#\# #\;) 'comment-line-suppress-forms)
@@ -219,6 +219,6 @@ to the underlying lisps tokenizer."
 	    (go :8))
        :8 ))))
 
-(defclass-autoargs aspirin-readtable ()
-  (aspirin-case))
+(defclass-autoargs lazy-susan-readtable ()
+  (lazy-susan-case))
 

@@ -1,5 +1,5 @@
 ;;;; package.lisp
 
-(defpackage #:aspirin
+(defpackage #:lazy-susan
   (:use #:cl #:mcn-utils))
 

@@ -1,9 +1,9 @@
-(defpackage #:aspirin-test
-  (:use #:cl #:aspirin)
-  (:shadowing-import-from #:aspirin
+(defpackage #:lazy-susan-test
+  (:use #:cl #:lazy-susan)
+  (:shadowing-import-from #:lazy-susan
                           #:looks-like-a-number))
 
-(in-package #:aspirin-test)
+(in-package #:lazy-susan-test)
 
 (defvar *tests* ())
 
