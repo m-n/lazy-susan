@@ -84,7 +84,8 @@
   "Check to see if the next token should be parsed as a number"
   (let ((start (file-position stream)))
     (unwind-protect
-         (let ((token (coerce (loop for c = char then (read-char stream nil nil t)
+         (let ((token (coerce (loop for c = char then
+                                    (read-char stream nil nil t)
                                     while c
                                     until (whitespacep c) collect c)
                               'string)))
@@ -181,75 +182,83 @@ to the underlying lisps tokenizer."
         name-token
         (looks-like-a-keyword (package-marker-p char)))
     (labels ((collect-token ()
-             (let ((token (make-array 0 :element-type 'character
-                                      :fill-pointer t :adjustable t))
-                   (escaped-characters ()))
-               (declare (special escaped-characters))
-               (loop for c = char then (read-char stream nil nil t) while c
-                     if (package-marker-p c)
-                     do (progn (assert (zerop package-markers-seen))
-                               (incf package-markers-seen)
-                               (when (package-marker-p (peek-char () stream))
+               (let ((token (make-array 0 :element-type 'character
+                                        :fill-pointer t :adjustable t))
+                     (escaped-characters ()))
+                 (declare (special escaped-characters))
+                 (loop for c = char then (read-char stream nil nil t) while c
+                       if (package-marker-p c)
+                       do (progn (assert (zerop package-markers-seen))
+                                 (incf package-markers-seen)
+                                 (when (package-marker-p (peek-char () stream))
                                    (read-char stream)
                                    (incf package-markers-seen))
-                               (setq char (read-char stream))
-                               (setq package-token (case-convert token))
-                               (collect-token)
-                               (return))
-                     else
-                     do (cond ((single-escape-p c)
-                               (push (vector-push-extend (read-char stream t nil t)
-                                                         token)
-                                     escaped-characters))
-                              ((multiple-escape-p c)
-                               (loop for ec = (read-char stream t nil t)
-                                     until (multiple-escape-p ec)
-                                     do (progn (when (single-escape-p ec)
-                                                 (setq ec (read-char stream t nil t)))
-                                               (push (vector-push-extend ec token)
-                                                     escaped-characters))))
-                              ((constituentp c) (vector-push-extend c token)))
-                     finally (setq name-token (case-convert token)))))
-           (case-convert (string)
-             (let ((converted (make-array 0 :element-type 'character :adjustable t :fill-pointer t)))
-               (declare (special escaped-characters))
-               (ecase (readtable-case *readtable*)
-                 (:preserve (print string))
-                 (:upcase
-                  (idoveq (i c string converted)
-                    (vector-push-extend
-                     (if (member i escaped-characters) c (char-upcase c))
-                     converted)))
-                 (:downcase
-                  (idoveq (i c string converted)
-                    (vector-push-extend
-                     (if (member i escaped-characters) c (char-downcase c))
-                     converted)))
-                 (:invert
-                  (cond ((idoveq (i c string t)
-                           (unless (or (member i escaped-characters)
-                                       (char= c (char-upcase c)))
-                             (return nil)))
-                         (idoveq (i c string converted)
-                           (vector-push-extend
-                            (if (member i escaped-characters) c (char-downcase c))
-                            converted)))
-                        ((idoveq (i c string t)
-                           (unless (or (member i escaped-characters)
-                                       (char= c (char-downcase c)))
-                             (return nil)))
-                         (idoveq (i c string converted)
-                           (vector-push-extend
-                            (if (member i escaped-characters) c (char-upcase c))
-                            converted)))
-                        (t (idoveq (i c string converted)
+                                 (setq char (read-char stream))
+                                 (setq package-token (case-convert token))
+                                 (collect-token)
+                                 (return))
+                       else
+                       do (cond ((single-escape-p c)
+                                 (push (vector-push-extend
+                                        (read-char stream t nil t)
+                                        token)
+                                       escaped-characters))
+                                ((multiple-escape-p c)
+                                 (loop for ec = (read-char stream t nil t)
+                                       until (multiple-escape-p ec)
+                                       do (progn
+                                            (when (single-escape-p ec)
+                                              (setq ec
+                                                    (read-char stream t nil t)))
+                                            (push (vector-push-extend ec token)
+                                                  escaped-characters))))
+                                ((constituentp c) (vector-push-extend c token)))
+                       finally (setq name-token (case-convert token)))))
+             (case-convert (string)
+               (let ((converted (make-array 0 :element-type 'character
+                                            :adjustable t :fill-pointer t)))
+                 (declare (special escaped-characters))
+                 (ecase (readtable-case *readtable*)
+                   (:preserve (print string))
+                   (:upcase
+                    (idoveq (i c string converted)
+                      (vector-push-extend
+                       (if (member i escaped-characters) c (char-upcase c))
+                       converted)))
+                   (:downcase
+                    (idoveq (i c string converted)
+                      (vector-push-extend
+                       (if (member i escaped-characters) c (char-downcase c))
+                       converted)))
+                   (:invert
+                    (cond ((idoveq (i c string t)
+                             (unless (or (member i escaped-characters)
+                                         (char= c (char-upcase c)))
+                               (return nil)))
+                           (idoveq (i c string converted)
                              (vector-push-extend
-                              (if (or (member i escaped-characters))
+                              (if (member i escaped-characters)
                                   c
-                                  (if (char= c (char-upcase c))
-                                      (char-downcase c)
-                                      (char-upcase c)))
-                              converted)))))))))
+                                  (char-downcase c))
+                              converted)))
+                          ((idoveq (i c string t)
+                             (unless (or (member i escaped-characters)
+                                         (char= c (char-downcase c)))
+                               (return nil)))
+                           (idoveq (i c string converted)
+                             (vector-push-extend
+                              (if (member i escaped-characters)
+                                  c
+                                  (char-upcase c))
+                              converted)))
+                          (t (idoveq (i c string converted)
+                               (vector-push-extend
+                                (if (or (member i escaped-characters))
+                                    c
+                                    (if (char= c (char-upcase c))
+                                        (char-downcase c)
+                                        (char-upcase c)))
+                                converted)))))))))
       (collect-token)
       (print name-token) (print  package-token)
       (if looks-like-a-keyword
