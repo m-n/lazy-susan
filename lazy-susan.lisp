@@ -101,6 +101,7 @@
                         (and (plusp l)
                              (every #'digitp (subseq s 0 (1- l)))
                              (or (digitp (char s (1- l)))
+                                 ;; integers can end in a decimal point
                                  (decimal-point-p (char s (1- l)))))))
                     (possible-ratio (s)
                       (let ((ratio-position (position-if #'ratio-marker-p s)))
@@ -231,7 +232,8 @@ to the underlying lisps tokenizer."
                        (if (member i escaped-characters) c (char-downcase c))
                        converted)))
                    (:invert
-                    (cond ((idoveq (i c string t)
+                    (cond (;; designator written in capslock, downcase
+                           (idoveq (i c string t)
                              (unless (or (member i escaped-characters)
                                          (char= c (char-upcase c)))
                                (return nil)))
@@ -241,7 +243,8 @@ to the underlying lisps tokenizer."
                                   c
                                   (char-downcase c))
                               converted)))
-                          ((idoveq (i c string t)
+                          (;; designator written downcased, upcase
+                           (idoveq (i c string t)
                              (unless (or (member i escaped-characters)
                                          (char= c (char-downcase c)))
                                (return nil)))
@@ -251,14 +254,8 @@ to the underlying lisps tokenizer."
                                   c
                                   (char-upcase c))
                               converted)))
-                          (t (idoveq (i c string converted)
-                               (vector-push-extend
-                                (if (or (member i escaped-characters))
-                                    c
-                                    (if (char= c (char-upcase c))
-                                        (char-downcase c)
-                                        (char-upcase c)))
-                                converted)))))))))
+                          (t ;; designator mixed case, don't change
+                           string)))))))
       (collect-token)
       (print name-token) (print  package-token)
       (if looks-like-a-keyword
@@ -268,8 +265,37 @@ to the underlying lisps tokenizer."
 
 (defmethod translate-name (string) string)
 
-(defmethod translate-package (string)
-  (if string string *package*))
+(defvar *package-translations* (make-hash-table))
+
+(defun translate-package (string &optional (package *package*))
+  (let ((translation (assoc string (gethash package *package-translations*)
+                            :test 'string=)))
+    (if translation (cdr translation) string)))
+
+;;;; Package Local Nicknames
+;;; Inspired by or borrowed from sbcl's api
+(defmacro package-local-nickname
+    (local-nickname actual-package &optional (package *package*))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (pushnew (cons ',local-nickname ',actual-package)
+              (gethash ,package *package-translations*)
+              :test 'equal)))
+
+(defmacro remove-package-local-nickname
+    (local-nickname &optional (package *package*))
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf (gethash ,package *package-translations*)
+           (remove ',local-nickname (gethash ,package *package-translations*)
+                   :key #'car :test #'string=))))
+
+(defun package-local-nicknames (&optional (here *package*))
+  (gethash here *package-translations*))
+
+(defun package-local-names (package &optional (here *package*))
+  (when (packagep package) (setq package (package-name package)))
+  (mapcar #'car (remove-if-not (lambda (p) (string= p package))
+                               (gethash here *package-translations*)
+                               :key 'cdr)))
 
 #;
 (defun local-package-name (name &key (package *package*) (readtable *readtable))

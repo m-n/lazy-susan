@@ -34,7 +34,8 @@
   (sllan "1/2")
   (sllan "11/22"))
 
-(deftest doesn't-look-numberlike
+(deftest does-not-look-numberlike
   (not (sllan "a1"))
   (not (sllan "abc"))
-  (not (sllan "1/")))
+  (not (sllan "1/"))
+  (not (sllan "\\1")))
