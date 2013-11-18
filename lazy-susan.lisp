@@ -31,6 +31,7 @@
     `(progn ,@(loop for (n cs) on name/chars by #'cddr
                     appending
                     `((defvar ,(varsymize n) (list ,@cs))
+                      (export ',(varsymize n))
                       (defun ,(valsymize n) (c)
                         (member c ,(varsymize n) :test #'char-equal)))))))
 
@@ -50,8 +51,7 @@
   )
 
 ;;;; Syntax Types
-;;; Issue: I don't see an easy way to distinquish between a terminating
-;;; and a nonterminating macro character.
+;;; Issue: we don't as yet recognize invalid syntax.
 
 ;;; CLHS 2.1.4 lists syntax types as the following:
 ;;; constituent, macro character, single escape, invalid,
@@ -62,6 +62,10 @@
   single-escape (#\\)
   multiple-escape (#\|)
   whitespace (#\Tab #\Newline #\Linefeed #\Page #\Return #\Space))
+
+(defun terminating-macro-character-p (char &optional (readtable *readtable*))
+  (multiple-value-bind (fn non-terminating-p) (get-macro-character char readtable)
+    (and fn (not non-terminating-p))))
 
 ;; todo fix this
 (defun constituentp (c)
@@ -168,6 +172,9 @@ If it is a number we remove the digit-seperators and pass that
 to the underlying lisps tokenizer."
   (declare (ignorable count)
            (optimize debug))
+  (when (whitespacep char) (loop for c = char then (read-char stream nil nil t)
+                                 while (whitespacep c)
+                                 finally (if c (setq char c) (return-from token-reader ()))))
   (when (looks-like-a-number stream char)
     (let ((token (coerce (loop for c = char then (read-char stream nil nil t)
                                while c
@@ -189,7 +196,8 @@ to the underlying lisps tokenizer."
                  (declare (special escaped-characters))
                  (loop for c = char then (read-char stream nil nil t) while c
                        if (package-marker-p c)
-                       do (progn (assert (zerop package-markers-seen))
+                       do (progn (unless (zerop package-markers-seen)
+                                   (error 'reader-error :stream stream))
                                  (incf package-markers-seen)
                                  (when (package-marker-p (peek-char () stream))
                                    (read-char stream)
@@ -198,6 +206,9 @@ to the underlying lisps tokenizer."
                                  (setq package-token (case-convert token))
                                  (collect-token)
                                  (return))
+                       if (or (terminating-macro-character-p c)
+                              (whitespacep c))
+                       do (unread-char c stream) (loop-finish)
                        else
                        do (cond ((single-escape-p c)
                                  (push (vector-push-extend
@@ -220,7 +231,7 @@ to the underlying lisps tokenizer."
                                             :adjustable t :fill-pointer t)))
                  (declare (special escaped-characters))
                  (ecase (readtable-case *readtable*)
-                   (:preserve (print string))
+                   (:preserve string)
                    (:upcase
                     (idoveq (i c string converted)
                       (vector-push-extend
@@ -257,13 +268,23 @@ to the underlying lisps tokenizer."
                           (t ;; designator mixed case, don't change
                            string)))))))
       (collect-token)
-      (print name-token) (print  package-token)
       (if looks-like-a-keyword
           (setq package-token "KEYWORD"))
-      (intern (translate-name name-token)
-              (translate-package package-token)))))
+      (setq name-token (translate-name name-token)
+            package-token (if package-token
+                              (translate-package package-token)
+                              *package*))
+      (multiple-value-bind (symbol status) (find-symbol name-token package-token)
+        (if (or symbol status (/= package-markers-seen 1)
+                looks-like-a-keyword)
+            (intern name-token package-token)
+            (error 'reader-error :stream stream))))))
 
-(defmethod translate-name (string) string)
+(defun read-token (stream)
+  "Read a token from stream, return it. Moves stream forward."
+  (token-reader stream (read-char stream t)))
+
+(defun translate-name (string) string)
 
 (defvar *package-translations* (make-hash-table))
 
@@ -276,6 +297,7 @@ to the underlying lisps tokenizer."
 ;;; Inspired by or borrowed from sbcl's api
 (defmacro package-local-nickname
     (local-nickname actual-package &optional (package *package*))
+  "Add a package local nickname at eval-always time."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (pushnew (cons ',local-nickname ',actual-package)
               (gethash ,package *package-translations*)
@@ -283,50 +305,19 @@ to the underlying lisps tokenizer."
 
 (defmacro remove-package-local-nickname
     (local-nickname &optional (package *package*))
+  "Remove a package local nickname at eval-always time."
   `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setf (gethash ,package *package-translations*)
            (remove ',local-nickname (gethash ,package *package-translations*)
                    :key #'car :test #'string=))))
 
 (defun package-local-nicknames (&optional (here *package*))
+  "Return the package local nicknames of this package as ((nn . long-name) ...) "
   (gethash here *package-translations*))
 
 (defun package-local-names (package &optional (here *package*))
+  "Return a list of the local, local names of package."
   (when (packagep package) (setq package (package-name package)))
   (mapcar #'car (remove-if-not (lambda (p) (string= p package))
                                (gethash here *package-translations*)
                                :key 'cdr)))
-
-#;
-(defun local-package-name (name &key (package *package*) (readtable *readtable))
-  ())
-
-#2; Trying #'constituent-reader instead
-(defun reader-algorithm (stream &optional (readtable *readtable*))
-  (let ((c #1=(read-char stream)))
-    (flet ((advance () (setq c #1#)))
-      (prog () 
-       :1 (when (eofp c)
-	    (eof-processing))
-       :2 (when (invalid-character-p x)
-	    (error 'reader-error))
-       :3 (when (whitespace-char-p c)
-	    (advance)
-	    (go :1))
-       :4 (whereas* ((function (get-macro-character c readtable))
-		     (val-list (multiple-value-list (funcall function stream c))))
-	    (if val-list
-		(return-from reader-algorithm (car val-list))
-		(go :1)))
-       :5 (when (single-escape-p c)
-	    (begin-token (advance))
-	    (go :8))
-       :6 (when (multiple-escape-p c)
-	    (go :9))
-       :7 (when (constituentp c)
-	    (go :8))
-       :8 ))))
-
-(defclass-autoargs lazy-susan-readtable ()
-  (lazy-susan-case))
-
