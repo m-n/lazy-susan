@@ -1,19 +1,24 @@
-More flexible symbol reading by way of a readtable.
 
-This is implemented by creating a new readtable rather than
-redifining Common Lisp functions. Because of this, all you
-need to do to take advantage of the added flexibility is
-(lazy-susan:in-syntax lazy-susan:*flexible-readtable*) at the top
-of your files -- you don't have to abandon :USEinging the CL
-package.
+A more flexible readtable.
 
-We intend to make the following easy to implement.
+The goal of lazy-susan's interface is to make the following easy
+to use:
 
 1. Package local package designators
 2. Synonym symbols.
 3. Redefinition of constituent traits
    (e.g. treat #\: as something other than a package seperator.)
 
+LAZY-SUSAN achieves this by implementing its own token reader -- the part
+of the reader algorithm that is used when there hasn't been a macro character
+encountered. (To hijack CL's readtable machinery we have
+to set our token reader as a macro character.)
+
 Out of scope:
 
 1. Unordered reading, e.g. foo.bar -> (bar foo)
+
+Maybe in the future:
+
+1. Enough flexibility to read cons as CL:CONS with downcasing reader
+2. Provide our own readtable.

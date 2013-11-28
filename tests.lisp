@@ -8,25 +8,31 @@
 (defvar *tests* ())
 
 (defun run-tests ()
-  (every #'identity
-         (mapcar (lambda (test)
-                   (format *trace-output* "~&Testing ~A." test)
-                   (if (funcall test)
-                       (progn (format *trace-output* " Passed.") t)
-                       (format *trace-output* " FAILED")))
-                 (reverse *tests*))))
+  (let ((fails 0))
+    (declare (special fails))
+    (mapcar (lambda (test)
+              (format *trace-output* "~&Testing ~A." test)
+              (if (funcall test)
+                  t))
+            (reverse *tests*))
+    (format t "~&~A Failures." fails)))
 
 (defmacro test-and (&body forms)
   (let ((f (gensym)))
     (cond ((null forms) t)
           (t `(let ((,f ,(car forms)))
-                (if ,f
-                    (test-and ,@(cdr forms))
-                    (format t "Failing Form ~A" ',(car forms))))))))
+                (declare (special fails))
+                (test-and ,@(cdr forms))
+                (if  (not ,f)
+                     (progn (format t "~&  Failing Form ~A" ',(car forms))
+                            (incf fails))
+                     (not (plusp fails))))))))
 
 (defmacro deftest (name &body body)
   `(progn (pushnew ',name *tests*)
-          (defun ,name () (test-and ,@body))))
+          (defun ,name ()
+            (handler-case (test-and ,@body)
+              (error (c) (format t "Failed; threw ~A" c))))))
 
 (defun sllan (s)
   (looks-like-a-number (make-string-input-stream s 1)
@@ -49,7 +55,8 @@
   (not (sllan "\\1")))
 
 (defun rtfs (s)
-  (read-token (make-string-input-stream s)))
+  (let ((*package* (find-package :lazy-susan-test)))
+    (read-token (make-string-input-stream s))))
 
 (defmacro signals-a (condition &body body)
   `(handler-case (prog1 () ,@body)
@@ -65,3 +72,35 @@
                 "LAZY-SUSAN")
   (string-equal (package-name (symbol-package (rtfs "lazy-susan::internalsymbol")))
                 "LAZY-SUSAN"))
+
+(package-local-nickname :lazy-susan-test-cl :cl)
+
+(deftest local-nickname-added
+  (symbolp (rtfs "lazy-susan-test:pi"))
+  (eq (rtfs "lazy-susan-test:pi") (rtfs "cl:pi"))
+  (not (find-package :lazy-susan-test-cl)))
+
+(package-local-nickname :lazy-susan-test-cl2 :cl)
+(remove-package-local-nickname :lazy-susan-test-cl2)
+
+(deftest local-nickname-removable
+  (signals-a error (rtfs "lazy-susan-test-cl2::package-should-not-be-found")))
+
+(synonym-symbol foo baz)
+
+(synonym-symbol bar cons)
+
+(deftest synonym-symbol-works
+  (symbolp (rtfs "foo"))
+  (eq (rtfs "foo") (rtfs "baz"))
+  (eq (rtfs "bar") (rtfs "cons")))
+
+(synonym-symbol zot zort)
+(synonym-symbol flee baz)
+
+(remove-synonym-symbol zot)
+(remove-synonym-symbol flee)
+
+(deftest synonym-symbol-removable
+  (not (eq (rtfs "zot") (rtfs "zort")))
+  (not (eq (rtfs "flee") (rtfs "baz"))))

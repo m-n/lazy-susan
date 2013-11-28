@@ -270,31 +270,24 @@ to the underlying lisps tokenizer."
       (collect-token)
       (if looks-like-a-keyword
           (setq package-token "KEYWORD"))
-      (setq name-token (translate-name name-token)
-            package-token (if package-token
-                              (translate-package package-token)
-                              *package*))
+      (setq package-token (translate-package package-token))
       (multiple-value-bind (symbol status) (find-symbol name-token package-token)
         (if (or symbol status (/= package-markers-seen 1)
                 looks-like-a-keyword)
-            (intern name-token package-token)
+            (canonical-symbol (intern name-token package-token))
             (error 'reader-error :stream stream))))))
 
 (defun read-token (stream)
   "Read a token from stream, return it. Moves stream forward."
   (token-reader stream (read-char stream t)))
 
-(defun translate-name (string) string)
-
-(defvar *package-translations* (make-hash-table))
-
-(defun translate-package (string &optional (package *package*))
-  (let ((translation (assoc string (gethash package *package-translations*)
-                            :test 'string=)))
-    (if translation (cdr translation) string)))
+(defun translate-package (package-string &optional (package *package*))
+  (or (global-package package-string) package))
 
 ;;;; Package Local Nicknames
 ;;; Inspired by or borrowed from sbcl's api
+(defvar *package-translations* (make-hash-table))
+
 (defmacro package-local-nickname
     (local-nickname actual-package &optional (package *package*))
   "Add a package local nickname at eval-always time."
@@ -321,3 +314,51 @@ to the underlying lisps tokenizer."
   (mapcar #'car (remove-if-not (lambda (p) (string= p package))
                                (gethash here *package-translations*)
                                :key 'cdr)))
+
+(defun global-package (local-package-string &optional (package *package*))
+  ;; when guards against confusing nil and "NIL"
+  (when local-package-string
+    (or (car (assoc local-package-string
+                    (gethash package *package-translations*)
+                    :test 'string=))
+        local-package-string)))
+
+;;;; Synonym Symbols
+;;; Also done in a package local fashion.
+
+(defvar *synonym-translations* (make-hash-table))
+
+(defvar *cl-disregards-case* ()
+  "Not yet implemented")
+
+(defmacro synonym-symbol (synonym-symbol canonical-symbol
+                          &optional (here *package*))
+  "Set the symbol to read as another symbol at eval-always time.
+  This setting is package-local."
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (pushnew (cons ',synonym-symbol ',canonical-symbol)
+              (gethash ,here *synonym-translations*)
+              :test 'eq :key 'car)))
+
+(defmacro remove-synonym-symbol (synonym-symbol &optional (package *package*))
+  "Remove a symbol translation at eval-always time."
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf (gethash ,package *synonym-translations*)
+           (remove ',synonym-symbol (gethash ,package *synonym-translations*)
+                   :key #'car :test #'eq))))
+
+(defun local-synonym-alist (&optional (here *package*))
+  "Return the synonyms defined in this package as ((synonym . real-symbol) ...) "
+  (gethash here *synonym-translations*))
+
+(defun local-synonyms (canonical-symbol &optional (here *package*))
+  "Return a list of the synonym symbols of a canonical symbol."
+  (mapcar #'car (remove-if-not (lambda (n) (eq n canonical-symbol))
+                               (gethash here *synonym-translations*)
+                               :key 'cdr)))
+
+(defun canonical-symbol (synonym &optional (package *package*))
+  (or (cdr (assoc synonym
+                  (gethash package *synonym-translations*)
+                  :test 'eq))
+      synonym))
