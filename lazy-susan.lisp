@@ -30,8 +30,12 @@
            (intern (concatenate 'string "*" (symbol-name s) "*"))))
     `(progn ,@(loop for (n cs) on name/chars by #'cddr
                     appending
-                    `((defvar ,(varsymize n) (list ,@cs))
-                      (export ',(varsymize n))
+                    `((defvar ,(varsymize n) (list ,@cs)
+                        ,(format nil "Characters with trait or syntax ~(~A~). ~
+                                      Default~:[~;s~]: ~{#\\~:C~^, ~}"
+                          (substitute #\Space #\- (symbol-name n))
+                          (cdr cs)
+                          cs))
                       (defun ,(valsymize n) (c)
                         (member c ,(varsymize n) :test #'char-equal)))))))
 
