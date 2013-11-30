@@ -5,6 +5,9 @@
 
 (in-package #:lazy-susan-test)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setq *readtable* (copy-readtable ())))
+
 (defvar *tests* ())
 
 (defun run-tests ()
@@ -39,6 +42,7 @@
                                 (schar s 0)))
 
 (deftest it-looks-like-a-number
+  (setf (digit-seperators *readtable*) '(#\,))
   (sllan "1")
   (sllan "1.")
   (sllan "11.1")
@@ -49,6 +53,8 @@
   (sllan "11/22"))
 
 (deftest does-not-look-numberlike
+  (prog1 t (setf (digit-seperators *readtable*) ()))
+  (not (sllan "1,000,000"))
   (not (sllan "a1"))
   (not (sllan "abc"))
   (not (sllan "1/"))

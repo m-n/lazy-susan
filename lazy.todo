@@ -1,16 +1,11 @@
 Readtable Support
+  Build and export a RT
   ANSI only, or all chars, or better way to hijack rt?
   SLIME integration
-  Build and export a RT
-traits
-  export manually
-  document
-Number?
-  Move flets into functions
-  Export looks-like-a-number style functionality
 Token Reader
-  Move flets into functions
   Export functionality of returning package and namestrings without interning
+Number?
+  Export looks-like-a-number style functionality
 Find a method for reading cl symbols with downcasing reader
 README
   Markdownify

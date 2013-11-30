@@ -27,17 +27,20 @@
                                               (symbol-name '#:-p)
                                               (symbol-name '#:p)))))
          (varsymize (s)
-           (intern (concatenate 'string "*" (symbol-name s) "*"))))
+           (intern (concatenate 'string "*" (symbol-name s) "*")))
+         (pluralize (s)
+           (intern (concatenate 'string (symbol-name s) (symbol-name '#:s)))))
     `(progn ,@(loop for (n cs) on name/chars by #'cddr
                     appending
-                    `((defvar ,(varsymize n) (list ,@cs)
-                        ,(format nil "Characters with trait or syntax ~(~A~). ~
-                                      Default~:[~;s~]: ~{#\\~:C~^, ~}"
-                          (substitute #\Space #\- (symbol-name n))
-                          (cdr cs)
-                          cs))
-                      (defun ,(valsymize n) (c)
-                        (member c ,(varsymize n) :test #'char-equal)))))))
+                    `((defvar ,(varsymize n) (make-hash-table :test #'eq))
+                      (defun ,(valsymize n) (c &optional (rt *readtable*))
+                        (find c (,(pluralize n) rt) :test #'char-equal))
+                      (defun ,(pluralize n) (rt)
+                        (gethash rt ,(varsymize n) ',cs))
+                      (defsetf ,(pluralize n) (rt) (list-of-chars)
+                        "Within readtable, represent trait by characters."
+                        `(setf (gethash ,rt ,',(varsymize n))
+                               ,list-of-chars)))))))
 
 (define-constituent-traits
   package-marker (#\:)
@@ -50,8 +53,8 @@
   exponent-marker (#\d #\e #\f #\l #\s)
   ;"invalid" would include whitespace, rubout, backspace
   ;;A character that can be included in a number without chaning its semantics, 
-  ;; e.g. 1,000,000 = 1000000
-  digit-seperator (#\,)
+  ;; e.g. 1,000,000 reads as 1000000 if we used #\,
+  digit-seperator ()
   )
 
 ;;;; Syntax Types
@@ -79,6 +82,10 @@
 ;;; The token reader is entered when a character of type constituent or escape
 ;;; is dispatched on by the readtable. It is responsible for creating either a
 ;;; symbol or a number.
+
+;;; Until we find a way to hijack the dispatch of constituent characters we
+;;; have to set the macro-character of characters that might start a function
+;;; to this.
 
 ;;; Creating our own version of this allows us to customize the way in which
 ;;; symbols and numbers are read, such as allowing us to create package local
@@ -130,7 +137,8 @@
                       (when (exponent-marker-p (schar s 0))
                         (setq s (subseq s 1)) ;; drop exponent marker
                         (let ((s-no-sign (string-left-trim
-                                          (append *minus-sign* *plus-sign*)
+                                          (append (minus-signs *readtable*)
+                                                  (plus-signs *readtable*))
                                           s)))
                           ;; maximum one sign
                           (and (<= (- (length s) (length s-no-sign)) 1)

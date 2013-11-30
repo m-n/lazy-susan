@@ -15,15 +15,16 @@
            #:remove-synonym-symbol
 
            ;; Constituent traits
-           #:*decimal-point*
-           #:*digit-seperator*
-           #:*exponent-marker*
-           #:*minus-sign*
-           #:*multiple-escape*
-           #:*package-marker*
-           #:*plus-sign*
-           #:*ratio-marker*
-           #:*single-escape*
-           #:*whitespace*
+           ;; exported for their setf function
+           #:decimal-points
+           #:digit-seperators
+           #:exponent-markers
+           #:minus-signs
+           #:multiple-escapes
+           #:package-markers
+           #:plus-signs
+           #:ratio-markers
+           #:single-escapes
+           #:whitespaces
            ))
 
