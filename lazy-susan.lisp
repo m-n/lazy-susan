@@ -163,8 +163,8 @@
       ;; unwind-protected form
       (file-position stream start))))
 
-;; We pretend that terminating macro characters don't exist
-;; and that there is no difference between read and read preserving whitespace
+;; We pretend that there is no difference between read
+;; and read preserving whitespace
 ;; includes much of the reader algorithm from CLHS 2.2
 (defun token-reader (stream char &optional count)
   "The reader function used to tokenize a symbol or a number. 
@@ -282,7 +282,7 @@ to the underlying lisps tokenizer."
   (token-reader stream (read-char stream t)))
 
 (defun translate-package (package-string &optional (package *package*))
-  (or (global-package package-string) package))
+  (or (global-package package-string) (package-name package)))
 
 ;;;; Package Local Nicknames
 ;;; Inspired by or borrowed from sbcl's api
