@@ -42,22 +42,24 @@
                                 (schar s 0)))
 
 (deftest it-looks-like-a-number
-  (setf (digit-seperators *readtable*) '(#\,))
+  (setf (digit-seperators *readtable*) '(#\z))
+  (sllan "1z000z000")
   (sllan "1")
   (sllan "1.")
+  (sllan "-.1")
   (sllan "11.1")
-  (sllan "1,000,000")
+  (sllan "11.1()")
   (sllan "10e6")
   (sllan "1d0")
-  (sllan "1/2")
-  (sllan "11/22"))
+  (sllan "1/2  ")
+  (sllan "  11/22"))
 
 (deftest does-not-look-numberlike
   (prog1 t (setf (digit-seperators *readtable*) ()))
-  (not (sllan "1,000,000"))
+  (not (sllan "1z000z000"))
   (not (sllan "a1"))
-  (not (sllan "abc"))
-  (not (sllan "1/"))
+  (not (sllan "  abc"))
+  (not (sllan "1/  "))
   (not (sllan "\\1")))
 
 (defun rtfs (s)
@@ -71,7 +73,11 @@
 (deftest reading-symbols
   (symbolp (rtfs "lazy-susan:read-token"))
   (symbolp (rtfs "lazy-susan::new?symbol"))
+  (eq (rtfs "not-imported") (rtfs "|NOT-IMPORTED|"))
+  (eq (rtfs "\\:baz") (rtfs "|:BAZ|"))
   (keywordp (rtfs ":baz"))
+  (= (rtfs "1") (rtfs "   1") (rtfs "1   ") 1)
+  (signals-a error (rtfs "   "))
   (signals-a reader-error (rtfs "lazy-susan:this-is-not-exported123"))
   (signals-a reader-error (rtfs "too:many:packages"))
   (string-equal (package-name (symbol-package (rtfs "lazy-susan:read-token")))

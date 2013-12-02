@@ -102,7 +102,9 @@
          (let ((token (coerce (loop for c = char then
                                     (read-char stream nil nil t)
                                     while c
-                                    until (whitespacep c) collect c)
+                                    until (or (whitespacep c)
+                                              (terminating-macro-character-p c))
+                                    collect c)
                               'string)))
            (setq token (remove-if #'digit-seperator-p token))
            (when (or (plus-sign-p (schar token 0))
@@ -184,13 +186,16 @@ If it is a number we remove the digit-seperators and pass that
 to the underlying lisps tokenizer."
   (declare (ignorable count)
            (optimize debug))
-  (when (whitespacep char) (loop for c = char then (read-char stream nil nil t)
-                                 while (whitespacep c)
-                                 finally (if c (setq char c) (return-from token-reader ()))))
+  (when (whitespacep char)
+    (loop for c = char then (read-char stream nil nil t)
+          while (whitespacep c)
+          finally (setq char c) ;; eof handling broken
+          ))
   (when (looks-like-a-number stream char)
     (let ((token (coerce (loop for c = char then (read-char stream nil nil t)
                                while c
-                               until (whitespacep c)
+                               until (or (whitespacep c)
+                                         (terminating-macro-character-p c))
                                unless (digit-seperator-p c) collect c
                                finally (unread-char c stream))
                          'string)))

@@ -22,3 +22,11 @@ Maybe in the future:
 
 1. Enough flexibility to read cons as CL:CONS with downcasing reader
 2. Provide our own readtable.
+
+Limitations:
+
+We haven't figured out how to handle EOF.
+
+We have to set the macro character function of every character that can
+start a token to the TOKEN-READER function to make a lazy-susan rt.
+This can be heavyweight especially if we want to allow non-ascii tokens.
