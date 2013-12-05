@@ -7,6 +7,7 @@
   :license "BSD 2-clause"
   :depends-on (#:mcn-utils)
   :components ((:file "package")
+               (:file "utils")
                (:file "syntax")
                (:file "token-reader")
                (:file "lazy-susan")))
