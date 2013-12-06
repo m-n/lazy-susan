@@ -15,13 +15,6 @@
 ;;; package nicknames, synonym symbols, and a visual marker for grouping digits
 ;;; in large numbers
 
-(defun chomp-whitespace (stream char)
-  (cond ((whitespacep char)
-         (loop for c = (read-char-no-hang stream () () t)
-               until (or (not c) (not (whitespacep c)))
-               finally (return c)))
-        (t char)))
-
 ;;;; Number Recognition.
 ;; CLHS 2.3.1 specifies the syntax of numbers
 ;; We do not yet respect the next section, "potential numbers",
