@@ -72,6 +72,7 @@ Interface
 Package Local Nicknames
 -----------------------
 Interface burgled from SBCL
+
     PACKAGE-LOCAL-NICKNAME:  Add a package local nickname at eval-always time.
     PACKAGE-LOCAL-NICKNAMES: Return the package local nicknames of this package as ((nn . long-name) ...)
     REMOVE-PACKAGE-LOCAL-NICKNAME:     Remove a package local nickname at eval-always time.
