@@ -7,7 +7,7 @@
 ;;; symbol or a number.
 
 ;;; Until we find a way to hijack the dispatch of constituent characters we
-;;; have to set the macro-character of characters that might start a function
+;;; have to set the macro-character of characters that might start a token
 ;;; to lazy-susan:token-reader
 
 ;;; Creating our own token reader allows us to customize the way in which
