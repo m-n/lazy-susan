@@ -8,7 +8,7 @@ __Status__: Experimental, buggy, ugly, fun.
 Why?
 ----
 
-The goal of lazy-susan's interface is to make the following easy
+For fun and eduction, and to make the following easy
 to use:
 
 1. Package local nicknames
@@ -19,13 +19,12 @@ to use:
    included in arbitrary places within a number without changing how
    the number is read.
 
-LAZY-SUSAN achieves this by implementing its own token reader -- the part
-of the reader algorithm that is used when there hasn't been a macro character
-encountered. To hijack CL's rt machinery we have to use a rt in
-which our TOKEN-READER read macro has been set as the macro function for every
-character that can start a symbol or number. You can get such a rt --
-for ascii characters on lisps that use a superset of ascii -- by calling
-(lazy-susan:rt).
+LAZY-SUSAN achieves this by implementing the part of the reader
+algorithm that is used when collecting a token. To hijack CL's rt
+machinery we have to use a rt in which our TOKEN-READER read macro has
+been set as the macro function for every character that can start a
+symbol or number. You can get such a rt -- for ascii characters on
+lisps that use a superset of ascii -- by calling (lazy-susan:rt).
 
 Example
 -------
@@ -40,14 +39,15 @@ Example
 
 Limitations
 -----------
-We have to set the macro function of every character that can
-start a token to the LAZY-SUSAN:TOKEN-READER function to make a lazy-susan rt.
+We have to set the macro function of every character that can start a
+token to the LAZY-SUSAN:TOKEN-READER function to make a lazy-susan rt.
 This could be heavyweight if we wanted to allow non-ascii tokens.
 
-In general we haven't thought much about print read consistency. In particular
-the escape character in strings is (by the CLHS) any character with syntax type
-single-escape, and we haven't made any attempt to change their print behavior when
-we add or remove single-escape characters.
+In general we haven't thought much about print read consistency. In
+particular the escape character in strings is (by the CLHS) any
+character with syntax type single-escape, and we haven't made any
+attempt to change their print behavior when we add or remove
+single-escape characters.
 
 We haven't tried to include "invalid" syntax yet.
 
@@ -79,7 +79,7 @@ Interface burgled from SBCL
 Synonym Symbols
 ---------------
     SYNONYM-SYMBOL:     Set the symbol to read as another symbol at eval-always time.
-    CLEAR-SYNONYM-SYMBOLS:   Remove symbol translations from package eval-always time.
+    CLEAR-SYNONYM-SYMBOLS:   Remove symbol translations from package at eval-always time.
 
 Readtables
 ----------
