@@ -14,7 +14,7 @@ to use:
 1. Package local nicknames
 2. Synonym symbols.
 3. Redefinition of constituent traits
-   (e.g. treat #\: as something other than a package seperator.)
+   (e.g. treat #\\: as something other than a package seperator.)
 4. Introduction of a new constituent trait: the DIGIT-SEPERATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
@@ -61,7 +61,7 @@ Deliberate Differences
 Using the default common lisp tokenization, characters can only have one
 syntax type, and both macro-character and single-escape are syntax types.
 We allow characters to have multiple syntax types. For example, with the
-default common lisp reader, if you set-macro-character on #\\ it is no
+default common lisp reader, if you set-macro-character on #\\\\ it is no
 longer a single escape, and no longer escapes in either symbols or strings.
 Using lazy-susan's tokenization and string macro-characters, a macro-character
 can still be a single escape where it's macro function is not triggered.
