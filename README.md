@@ -3,7 +3,7 @@ LAZY-SUSAN
 
 A more flexible readtable (rt).
 
-__Status__: Experimental, buggy, ugly, fun.
+__Status__: Experimental, fun.
 
 Why?
 ----

@@ -183,50 +183,40 @@ So that token-reader can convert the tokens to a symbol or number."
   "Case convert the string according to the active readtable-case.
 escaped-indices is a list representing which positions in string represent
 escaped characters.."
-  (let ((converted (make-array (length string) :element-type 'character
-                               :fill-pointer 0)))
-    (ecase (readtable-case *readtable*)
-      (:upcase (idoveq (i c string converted)
-                 (vector-push
-                  (if (member i escaped-indices) c (char-upcase c))
-                  converted)))
-      (:downcase (idoveq (i c string converted)
-                   (vector-push
-                    (if (member i escaped-indices) c (char-downcase c))
-                    converted)))
-      (:invert (cond ((idoveq (i c string t)
-                        (unless (or (member i escaped-indices)
-                                    (char= c (char-upcase c)))
-                          (return nil)))
-                      ;; designator written in capslock, downcase
-                      (idoveq (i c string converted)
-                        (vector-push
-                         (if (member i escaped-indices)
-                             c
-                             (char-downcase c))
-                         converted)))
-                     ((idoveq (i c string t)
-                        (unless (or (member i escaped-indices)
-                                    (char= c (char-downcase c)))
-                          (return nil)))
-                      ;; designator written downcased, upcase
-                      (idoveq (i c string converted)
-                        (vector-push
-                         (if (member i escaped-indices)
-                             c
-                             (char-upcase c))
-                         converted)))
-                     (t ;; designator mixed case, don't change
-                      (idoveq (i c string converted)
-                        (vector-push
-                         c
-                         converted))
-                      converted)))
-      (:preserve (idoveq (i c string converted)
-                   (vector-push
-                    c
-                    converted))
-                 converted))))
+  (let* ((converted (make-array (length string) :element-type 'character
+                                :fill-pointer 0))
+         (rcase (if (eq (readtable-case *readtable*) :invert)
+                    (cond ((idoveq (i c string t)
+                             (unless (or (member i escaped-indices)
+                                         (char= c (char-downcase c)))
+                               (return nil)))
+                           ;; designator written downcased, upcase
+                           :upcase)
+                          ((idoveq (idx char string t)
+                             (unless (or (member idx escaped-indices)
+                                         (char= char (char-upcase char)))
+                               (return nil)))
+                           ;; designator written in capslock, downcase
+                           :downcase)
+                          (t ;; designator mixed case, don't change
+                           :preserve))
+                    (readtable-case *readtable*)))
+         (convert (ecase rcase
+                    (:upcase
+                     (lambda (i c)
+                       (if (member i escaped-indices) c (char-upcase c))))
+                    (:downcase
+                     (lambda (i c)
+                       (if (member i escaped-indices) c (char-downcase c))))
+                    (:preserver (lambda (i c)
+                                  (declare (ignore i))
+                                  c))
+                    )))
+    (idoveq (i c string converted)
+      (vector-push
+       (funcall convert i c)
+       converted))
+    converted))
 
 (defun tokenize-read-char (stream)
   "Read the character if it will continue the token, otherwise return nil."
