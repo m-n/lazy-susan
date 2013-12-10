@@ -110,7 +110,10 @@ package and symbol mapping."
   (unless char
     (cerror "NIL instead of a char at token-reader." ())
     (return-from token-reader (values)))
-  (multiple-value-bind (package-token name-token saw-escape-p package-markers-seen)
+  (multiple-value-bind (package-token
+                        name-token
+                        saw-escape-p
+                        package-markers-seen)
       (collect-token stream char)
     (unless *read-suppress*
       (unless (or package-token saw-escape-p)
@@ -127,9 +130,9 @@ package and symbol mapping."
             (error 'reader-error :stream stream))))))
 
 (defun collect-token (stream char)
-  "Collects the next token as 
-   (values package-token name-token saw-escape-p package-markers-seen)
-So that token-reader can convert the tokens to a symbol or number."
+  "Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
+So that token-reader can convert the tokens to a symbol or number. Keywords
+result in an empty string for the package token."
   (declare (optimize debug))
   (let ((package-markers-seen 0)
         package-token
@@ -152,9 +155,6 @@ So that token-reader can convert the tokens to a symbol or number."
                          (error 'reader-error :stream stream))
                        (setq package-token (case-convert token escaped-indices))
                        (go next-token))
-             if (or (terminating-macro-character-p c)
-                    (whitespacep c))
-             do (loop-finish)
              else
              do (cond ((single-escape-p c)
                        (setq saw-escape-p t)
@@ -174,9 +174,6 @@ So that token-reader can convert the tokens to a symbol or number."
                                         escaped-indices))))
                       ((constituentp c) (vector-push-extend c token)))
              finally (setq name-token (case-convert token escaped-indices))))
-    (when (and package-token (not name-token))
-      ;; assumed name was a package, no package given
-      (rotatef package-token name-token))
     (values package-token name-token saw-escape-p package-markers-seen)))
 
 (defun case-convert (string escaped-indices)
@@ -185,38 +182,40 @@ escaped-indices is a list representing which positions in string represent
 escaped characters.."
   (let* ((converted (make-array (length string) :element-type 'character
                                 :fill-pointer 0))
-         (rcase (if (eq (readtable-case *readtable*) :invert)
-                    (cond ((idoveq (i c string t)
-                             (unless (or (member i escaped-indices)
-                                         (char= c (char-downcase c)))
-                               (return nil)))
-                           ;; designator written downcased, upcase
-                           :upcase)
-                          ((idoveq (idx char string t)
-                             (unless (or (member idx escaped-indices)
-                                         (char= char (char-upcase char)))
-                               (return nil)))
-                           ;; designator written in capslock, downcase
-                           :downcase)
-                          (t ;; designator mixed case, don't change
-                           :preserve))
-                    (readtable-case *readtable*)))
-         (convert (ecase rcase
-                    (:upcase
-                     (lambda (i c)
-                       (if (member i escaped-indices) c (char-upcase c))))
-                    (:downcase
-                     (lambda (i c)
-                       (if (member i escaped-indices) c (char-downcase c))))
-                    (:preserver (lambda (i c)
-                                  (declare (ignore i))
-                                  c))
-                    )))
+         (direction  (convert-direction string escaped-indices)))
     (idoveq (i c string converted)
       (vector-push
-       (funcall convert i c)
+       (convert i c escaped-indices direction)
        converted))
     converted))
+
+(defgeneric convert (i c escaped-indices direction)
+  (:documentation "Convert [c]haracter at [i]ndex given direction, escapes.")
+  (:method (i c escaped-indices (direction (eql :upcase)))
+    (if (member i escaped-indices) c (char-upcase c)))
+  (:method (i c escaped-indices (direction (eql :downcase)))
+    (if (member i escaped-indices) c (char-downcase c)))
+  (:method (i c escaped-indices (direction (eql :preserve)))
+    (declare (ignore i))
+    c))
+
+(defun convert-direction (string escaped-indices)
+  (if (eq (readtable-case *readtable*) :invert)
+      (cond ((idoveq (i c string t)
+               (unless (or (member i escaped-indices)
+                           (char= c (char-downcase c)))
+                 (return nil)))
+             ;; designator written downcased, upcase
+             :upcase)
+            ((idoveq (idx char string t)
+               (unless (or (member idx escaped-indices)
+                           (char= char (char-upcase char)))
+                 (return nil)))
+             ;; designator written in capslock, downcase
+             :downcase)
+            (t ;; designator mixed case, don't change
+             :preserve))
+      (readtable-case *readtable*)))
 
 (defun tokenize-read-char (stream)
   "Read the character if it will continue the token, otherwise return nil."
@@ -233,4 +232,3 @@ escaped characters.."
            "KEYWORD")
       (global-package package-string)
       (package-name package)))
-

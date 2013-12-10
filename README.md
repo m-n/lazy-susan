@@ -55,6 +55,9 @@ We have so far ignored "potential numbers".
 
 Our error reporting is substandard.
 
+We don't intercept the number reading macro characters, so
+digit-seperators will not work with e.g. #B (possible TODO)
+
 Deliberate Differences
 ----------------------
 
@@ -86,6 +89,7 @@ Readtables
 ----------
     RT:                 Return copy of ReadTable with lazy-susan features enabled. ASCII only.
     TOKEN-READER:       The reader function used to tokenize a symbol or a number.
+    COLLECT-TOKEN:      Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
 
 Readtble Setfs
 --------------

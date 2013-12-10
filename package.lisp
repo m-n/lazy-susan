@@ -12,7 +12,7 @@
    #:synonym-symbol
    #:clear-synonym-symbols
 
-   ;; Constituent traits
+   ;; Constituent traits and Syntax Types
    ;; exported for their setf function
    #:decimal-points
    #:digit-seperators
@@ -25,8 +25,9 @@
    #:single-escapes
    #:whitespaces
 
-   ;; Readtable
+   ;; Reading
    #:rt
    #:token-reader
+   #:collect-token
    ))
 
