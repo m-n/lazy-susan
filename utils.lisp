@@ -9,6 +9,7 @@
      ,@body))
 
 (defmacro idoveq ((index-var value-var seq &optional return) &body body)
+  "indexed-do-vector"
   (let ((length (gensym))
         (gseq (gensym)))
     `(let* ((,gseq ,seq)

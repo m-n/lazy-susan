@@ -26,8 +26,8 @@ been set as the macro function for every character that can start a
 symbol or number. You can get such a rt -- for ascii characters on
 lisps that use a superset of ascii -- by calling (lazy-susan:rt).
 
-Example
--------
+Example: Traits
+---------------
     (defvar *my-rt* (lazy-susan:rt))
 
     (setf (digit-seperators *my-rt*) '(#\z))
@@ -36,6 +36,31 @@ Example
       (read-from-string "100z000z000"))
 
     => (values 100000000 11)
+
+Example: Package Local Nickname
+-------------------------------
+    ;;;; package.lisp
+    (defpackage #:example
+      (:use #:cl #:lazy-susan))
+
+    (in-package #:example)
+
+    (package-local-nickname re cl-ppcre)
+
+    (setf (lazy-susan:project-rt 'example) (lazy-susan:rt))
+
+    ;;;; example.lisp
+
+    (lazy-susan:in-project #:example)
+
+    (re:scan-to-strings "(\\w+)" "abc def")
+
+Note that it's necessary to package qualify IN-PROJECT even though we
+used LAZY-SUSAN. This is because example.lisp could be read from an
+environment that is in any arbitrary *package* -- probably not one
+using LAZY-SUSAN. The usual practice of using in-package instead of
+the explicit cl:in-package only works so well because most packages
+use cl.
 
 Limitations
 -----------
