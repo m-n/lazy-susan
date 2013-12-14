@@ -1,6 +1,7 @@
 ;;;; package.lisp
 
 (defpackage #:lazy-susan
+  (:nicknames #:ls)
   (:use #:cl)
   (:export
    ;; Package Local Nicknames (interface burgled from SBCL)

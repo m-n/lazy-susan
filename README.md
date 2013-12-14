@@ -5,6 +5,8 @@ A more flexible readtable (rt).
 
 __Status__: Experimental, fun.
 
+__Package Nickname__: ls
+
 Why?
 ----
 
@@ -24,11 +26,11 @@ algorithm that is used when collecting a token. To hijack CL's rt
 machinery we have to use a rt in which our TOKEN-READER read macro has
 been set as the macro function for every character that can start a
 symbol or number. You can get such a rt -- for ascii characters on
-lisps that use a superset of ascii -- by calling (lazy-susan:rt).
+lisps that use a superset of ascii -- by calling (ls:rt).
 
 Example: Traits
 ---------------
-    (defvar *my-rt* (lazy-susan:rt))
+    (defvar *my-rt* (ls:rt))
 
     (setf (digit-seperators *my-rt*) '(#\z))
 
@@ -48,11 +50,11 @@ Example: Package Local Nickname
 
     (package-local-nickname re cl-ppcre)
 
-    (setf (lazy-susan:project-rt 'example) (lazy-susan:rt))
+    (setf (ls:project-rt 'example) (ls:rt))
 
     ;;;; example.lisp
 
-    (lazy-susan:in-project #:example)
+    (ls:in-project #:example)
 
     (re:scan-to-strings "(\\w+)" "abc def")
 
@@ -66,7 +68,7 @@ use cl.
 Limitations
 -----------
 We have to set the macro function of every character that can start a
-token to the LAZY-SUSAN:TOKEN-READER function to make a lazy-susan rt.
+token to the LS:TOKEN-READER function to make a lazy-susan rt.
 This could be heavyweight if we wanted to allow non-ascii tokens.
 
 In general we haven't thought much about print read consistency. In
