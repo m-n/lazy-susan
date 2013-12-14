@@ -40,6 +40,7 @@ Example: Traits
 Example: Package Local Nickname
 -------------------------------
     ;;;; package.lisp
+
     (defpackage #:example
       (:use #:cl #:lazy-susan))
 
@@ -57,8 +58,8 @@ Example: Package Local Nickname
 
 Note that it's necessary to package qualify IN-PROJECT even though we
 used LAZY-SUSAN. This is because example.lisp could be read from an
-environment that is in any arbitrary *package* -- probably not one
-using LAZY-SUSAN. The usual practice of using in-package instead of
+environment that is in any arbitrary \*package\* -- possibly one not
+using LAZY-SUSAN. The usual practice of writing in-package instead of
 the explicit cl:in-package only works so well because most packages
 use cl.
 
