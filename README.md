@@ -90,6 +90,8 @@ Readtables
     RT:                 Return copy of ReadTable with lazy-susan features enabled. ASCII only.
     TOKEN-READER:       The reader function used to tokenize a symbol or a number.
     COLLECT-TOKEN:      Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
+    IN-PROJECT:         IN-PACKAGE alternative. Also sets *readtable*.
+    (SETF PROJECT-RT):  Set a packages default readtable for use with in-project.
 
 Readtble Setfs
 --------------

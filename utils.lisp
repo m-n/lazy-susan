@@ -3,6 +3,11 @@
 
 (in-package #:lazy-susan)
 
+(defmacro with-gensyms ((&rest names) &body body)
+  `(let ,(loop for n in names collect
+               `(,n (gensym ,(concatenate 'string (symbol-name n) "-"))))
+     ,@body))
+
 (defmacro idoveq ((index-var value-var seq &optional return) &body body)
   (let ((length (gensym))
         (gseq (gensym)))

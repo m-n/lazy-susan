@@ -29,5 +29,7 @@
    #:rt
    #:token-reader
    #:collect-token
+   #:in-project
+   #:project-rt
    ))
 

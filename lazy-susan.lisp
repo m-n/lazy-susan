@@ -105,3 +105,26 @@
     ;; Strings are specified to use single-escape characters as escape
     ;; So we have to shadow #\" to make it work with our idea of a single escape
     (set-macro-character #\" #'read-string () rt)))
+
+;;;; Convenient way to use a rt
+
+(defmacro in-project (package-designator &optional rt)
+  "IN-PACKAGE alternative. Also sets *readtable*.
+  Default RT set by (setf project-rt)."
+  (with-gensyms (r p)
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (let  ((,r ,rt)
+              (,p ',package-designator))
+         (unless ,r (setq ,r (project-rt ,p)))
+         (prog1 (setq *package* (find-package ,p))
+           (setq *readtable* ,r))))))
+
+(defvar *project-rts* (make-hash-table :test 'equal))
+
+(defun project-rt (package-designator)
+  (gethash (find-package package-designator) *project-rts* *readtable*))
+
+(defsetf project-rt (package-designator) (rt)
+  "Set a packages default readtable for use with in-project."
+  `(setf (gethash (find-package ,package-designator) *project-rts*)
+         ,rt))
