@@ -22,6 +22,8 @@
 (defun looks-like-a-number (string)
   "Check to see if the string can be parsed as a number."
   (let ((token (remove-if #'digit-seperator-p string)))
+    (unless (plusp (length token))
+      (return-from looks-like-a-number ()))
     (when (or (plus-sign-p (schar token 0))
               (minus-sign-p (schar token 0)))
       ;; it's valid syntax for any number to start with single sign
