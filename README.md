@@ -26,18 +26,26 @@ algorithm that is used when collecting a token. To hijack CL's rt
 machinery we have to use a rt in which our TOKEN-READER read macro has
 been set as the macro function for every character that can start a
 symbol or number. You can get such a rt -- for ascii characters on
-lisps that use a superset of ascii -- by calling (ls:rt).
+lisps that use a superset of ascii -- by calling (ls:rt). (ls:rt) also
+sets a doublequote macro character so strings can use our idea of a
+single escape, and a macro function for #B, #O, #X, #R so that they
+can use digit separators.
 
 Example: Traits
 ---------------
     (defvar *my-rt* (ls:rt))
 
-    (setf (digit-seperators *my-rt*) '(#\z))
+    (setf (digit-seperators *my-rt*) '(#\_))
 
     (let ((*readtable* *my-rt*))
-      (read-from-string "100z000z000"))
+      (read-from-string "100_000_000"))
 
     => (values 100000000 11)
+
+    (let ((*readtable* *my-rt*))
+      (read-from-string "#b1000_1000"))
+
+    => (values 136 11)
 
 Example: Package Local Nickname
 -------------------------------
@@ -82,9 +90,6 @@ We haven't tried to include "invalid" syntax yet.
 We have so far ignored "potential numbers".
 
 Our error reporting is substandard.
-
-We don't intercept the number reading macro characters, so
-digit-seperators will not work with e.g. #B (possible TODO)
 
 Deliberate Differences
 ----------------------

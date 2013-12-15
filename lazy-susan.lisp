@@ -81,18 +81,13 @@
 
 ;;;; A Readtable
 
-(defun read-string (stream char &optional count)
-  (declare (ignore count))
-  (let ((end-char (closer char)))
-    (with-output-to-string (s)
-      (loop for c = (read-char stream t t t)
-            until (char= c end-char) do
-            (write-char (if (single-escape-p c)
-                            (read-char stream t t t)
-                            c)
-                        s)))))
+;;; There are two aspects to this: first, we have to set constituent
+;;; characters to our macro character so we can shadow the symbol
+;;; reading semantics. Second, we have to make our own string and
+;;; number macro character readers and use them because their
+;;; semantics depend on constituent traits.
 
-(defun rt (&optional (rt (copy-readtable nil)))
+(defun rt (&optional (rt (load-time-value (copy-readtable nil))))
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
   This sets non-whitespace, non-macro characters with code point 0 to 200
   to be the lazy-susan's token-reader. Better solutions solicited."
@@ -104,7 +99,42 @@
           (set-macro-character char #'token-reader t rt))
     ;; Strings are specified to use single-escape characters as escape
     ;; So we have to shadow #\" to make it work with our idea of a single escape
-    (set-macro-character #\" #'read-string () rt)))
+    (set-macro-character #\" #'read-string () rt)
+    (set-dispatch-macro-character #\# #\b #'read-rational rt)
+    (set-dispatch-macro-character #\# #\o #'read-rational rt)
+    (set-dispatch-macro-character #\# #\x #'read-rational rt)
+    (set-dispatch-macro-character #\# #\r #'read-rational rt)))
+
+(defun read-string (stream char &optional count)
+  (declare (ignore count))
+  (let ((end-char (closer char)))
+    (with-output-to-string (s)
+      (loop for c = (read-char stream t t t)
+            until (char= c end-char) do
+            (write-char (if (single-escape-p c)
+                            (read-char stream t t t)
+                            c)
+                        s)))))
+
+(defun read-rational (stream char &optional count)
+  "Read a rational, set the *read-base* according to the standard syntax's
+  idea of what it should be based on the macro-character."
+  (let ((*read-base* (ecase char
+                       ((#\b #\B) 2)
+                       ((#\o #\O) 8)
+                       ((#\x #\X) 16)
+                       ((#\r #\R) count))))
+    (multiple-value-bind (package token escapep package-marker-count)
+        (collect-token stream (read-char stream t t t))
+      (unless *read-suppress*
+        (unless (and (not (or package escapep))
+                     (zerop package-marker-count))
+          (cerror "Try to make a number anyway."
+                  "Package or escape character seen while parsing rational."))
+        (let ((number (looks-like-a-number token)))
+          (assert (rationalp number) (number)
+                  "~A not a rational." number)
+          number)))))
 
 ;;;; Convenient way to use a rt
 

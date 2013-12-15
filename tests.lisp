@@ -116,3 +116,29 @@
 ;; (deftest synonym-symbol-removable
 ;;   (not (eq (rtfs "zot") (rtfs "zort")))
 ;;   (not (eq (rtfs "flee") (rtfs "baz"))))
+
+(setf (digit-seperators *rt*) '(#\*))
+
+(deftest number-readers
+  (symbolp (rtfs "*"))
+  (zerop (rtfs "#b0"))
+  (zerop (rtfs "#o0"))
+  (zerop (rtfs "#x0"))
+  (= 16
+     (rtfs "#b10000")
+     (rtfs "#o20")
+     (rtfs "#x10"))
+  (= 1/2 (rtfs "#b1/10")
+     (rtfs "#o10/20")
+     (rtfs "#x7/e"))
+  (=  (rtfs "#2r1/10")
+     (rtfs "#8r10/20")
+     (rtfs "#16r7/e"))
+  (= (rtfs "#b10000000")
+     (rtfs "#b1000*0000")
+     (rtfs "#b*1000*0000")
+     (rtfs "128")
+     (rtfs "1*2*8"))
+  (signals-a error (rtfs "#B2"))
+  (signals-a error (rtfs "#oa"))
+  (signals-a error (rtfs "#x ")))
