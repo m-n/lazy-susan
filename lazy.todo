@@ -1,14 +1,11 @@
+Maybes
+  Number?
+    Export looks-like-a-number style functionality
+  Readtable Support
+    ANSI only, or all chars, or better way to hijack rt?
+    SLIME integration
+  Find a method for reading cl symbols with downcasing reader
 clearer errors
   symbol not exported
 testsuite
   fix return value on fails
-Maybes
-  Readtable Support
-    ANSI only, or all chars, or better way to hijack rt?
-    SLIME integration
-  Token Reader
-    Export functionality of returning package and namestrings without interning
-  Number?
-    Make number reader macros, e.g. #B
-    Export looks-like-a-number style functionality
-  Find a method for reading cl symbols with downcasing reader

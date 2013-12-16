@@ -117,7 +117,7 @@
 ;;   (not (eq (rtfs "zot") (rtfs "zort")))
 ;;   (not (eq (rtfs "flee") (rtfs "baz"))))
 
-(setf (digit-seperators *rt*) '(#\*))
+(setf (digit-separators *rt*) '(#\*))
 
 (deftest number-readers
   (symbolp (rtfs "*"))

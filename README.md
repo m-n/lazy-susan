@@ -17,7 +17,7 @@ to use:
 2. Synonym symbols.
 3. Redefinition of constituent traits
    (e.g. treat #\\: as something other than a package seperator.)
-4. Introduction of a new constituent trait: the DIGIT-SEPERATOR can be
+4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
 
@@ -35,7 +35,7 @@ Example: Traits
 ---------------
     (defvar *my-rt* (ls:rt))
 
-    (setf (digit-seperators *my-rt*) '(#\_))
+    (setf (digit-separators *my-rt*) '(#\_))
 
     (let ((*readtable* *my-rt*))
       (read-from-string "100_000_000"))
@@ -129,7 +129,7 @@ Readtables
 Readtble Setfs
 --------------
     DECIMAL-POINTS:     Within readtable, represent trait by characters.
-    DIGIT-SEPERATORS:   Within readtable, represent trait by characters.
+    DIGIT-SEPARATORS:   Within readtable, represent trait by characters.
     EXPONENT-MARKERS:   Within readtable, represent trait by characters.
     MINUS-SIGNS:        Within readtable, represent trait by characters.
     MULTIPLE-ESCAPES:   Within readtable, represent trait by characters.

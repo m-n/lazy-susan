@@ -50,7 +50,7 @@
 
 ;;; Departure from the standard: We don't include the invalid traits, and
 ;;; alphabetic is a fall through for anything that wasn't one of the others.
-;;; We also introduce the digit-seperator, which can be included arbitrarily
+;;; We also introduce the digit-separator, which can be included arbitrarily
 ;;; in a representation of number without changing the value lexed by the reader.
 
 (define-constituent-traits
@@ -65,7 +65,7 @@
   ;"invalid" would include whitespace, rubout, backspace
   ;;A character that can be included in a number without chaning its semantics, 
   ;; e.g. 1,000,000 reads as 1000000 if we used #\,
-  digit-seperator ()
+  digit-separator ()
   )
 
 ;;;; Syntax Types
@@ -87,7 +87,6 @@
 (defun terminating-macro-character-p (char &optional (rt *readtable*))
   (multiple-value-bind (fn non-terminating-p) (get-macro-character char rt)
     (and fn (not non-terminating-p))))
-
 
 (defun constituentp (c)
   "Wrong, but works internally. "

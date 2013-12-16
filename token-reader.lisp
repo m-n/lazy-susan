@@ -21,7 +21,7 @@
 ;; wherein implementations are allowed to extend the number syntax.
 (defun looks-like-a-number (string)
   "Check to see if the string can be parsed as a number."
-  (let ((token (remove-if #'digit-seperator-p string)))
+  (let ((token (remove-if #'digit-separator-p string)))
     (unless (plusp (length token))
       (return-from looks-like-a-number ()))
     (when (or (plus-sign-p (schar token 0))
@@ -104,7 +104,7 @@
 
 (defun token-reader (stream char &optional count)
   "The reader function used to tokenize a symbol or a number. 
-If it looks like a number we remove the digit-seperators and pass that 
+If it looks like a number we remove the digit-separators and pass that
 to be read from a standard readtable. Otherwise we process with lazy-susan's
 package and symbol mapping."
   (declare (ignorable count)

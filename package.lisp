@@ -16,7 +16,7 @@
    ;; Constituent traits and Syntax Types
    ;; exported for their setf function
    #:decimal-points
-   #:digit-seperators
+   #:digit-separators
    #:exponent-markers
    #:minus-signs
    #:multiple-escapes
