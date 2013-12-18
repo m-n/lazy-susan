@@ -7,5 +7,3 @@ Maybes
   Find a method for reading cl symbols with downcasing reader
 clearer errors
   symbol not exported
-testsuite
-  fix return value on fails
