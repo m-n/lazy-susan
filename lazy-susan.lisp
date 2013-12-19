@@ -132,8 +132,11 @@
           (cerror "Try to make a number anyway."
                   "Package or escape character seen while parsing rational."))
         (let ((number (looks-like-a-number token)))
-          (assert (rationalp number) (number)
-                  "~A not a rational." number)
+          (unless (rationalp number)
+            (error 'not-rational-error
+                   :symbol token
+                   :base *read-base*
+                   :stream stream))
           number)))))
 
 ;;;; Convenient way to use a rt

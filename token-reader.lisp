@@ -241,22 +241,37 @@ escaped characters.."
 ;;;; Conditions
 
 (define-condition find-symbol-error (package-error reader-error)
-  ((symbol :reader reader-package-error-symbol :initarg :symbol))
+  ((symbol :reader find-symbol-error-symbol :initarg :symbol))
   (:report (lambda (c s)
              (let ((errored-s (stream-error-stream c)))
                (format
-                s "Error reading stream ~A: ~&Symbol named ~A is not external to package ~A."
+                s "Error reading stream ~A~@
+                   Symbol named ~A is not external to package ~A."
                 errored-s
-                (reader-package-error-symbol c)
+                (find-symbol-error-symbol c)
                 (package-error-package c))
                (print-file?-stream-info errored-s :stream s)))))
 
 (define-condition package-marker-error (reader-error)
   ()
   (:report (lambda (c s)
-             (format s "Impermissible pattern of package markers seen while reading ~A."
-                     (stream-error-stream c))
+             (format
+              s
+              "Impermissible pattern of package markers seen while reading ~A."
+              (stream-error-stream c))
              (print-file?-stream-info (stream-error-stream c) :stream s))))
+
+(define-condition not-rational-error (reader-error)
+  ((symbol :reader not-rational-error-symbol :initarg :symbol)
+   (base :reader not-rational-error-base :initarg :base))
+  (:report (lambda (c s)
+             (let ((errored-s (stream-error-stream c)))
+               (format s "Error reading stream ~A~@
+                          ~A not a rational in base ~A."
+                       errored-s
+                       (not-rational-error-symbol c)
+                       (not-rational-error-base c))
+               (print-file?-stream-info errored-s :stream s)))))
 
 (defun print-file?-stream-info (s &key (stream *standard-output*))
   (when (typep s 'file-stream)
