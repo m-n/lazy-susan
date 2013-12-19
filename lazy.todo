@@ -5,5 +5,3 @@ Maybes
     ANSI only, or all chars, or better way to hijack rt?
     SLIME integration
   Find a method for reading cl symbols with downcasing reader
-clearer errors
-  symbol not exported

@@ -129,7 +129,10 @@ package and symbol mapping."
         (if (or symbol status (/= package-markers-seen 1)
                 (equal package-token "KEYWORD"))
             (canonical-symbol (intern name-token package-token))
-            (error 'reader-error :stream stream))))))
+            (error 'find-symbol-error
+                   :stream stream
+                   :symbol name-token
+                   :package package-token))))))
 
 (defun collect-token (stream char)
   "Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
@@ -147,14 +150,14 @@ result in an empty string for the package token."
              with escaped-indices = ()        
              if (package-marker-p c)
              do (progn (unless (zerop package-markers-seen)
-                         (error 'reader-error :stream stream))
+                         (error 'package-marker-error :stream stream))
                        (incf package-markers-seen)
                        (when (package-marker-p (peek-char () stream))
                          (read-char stream)
                          (incf package-markers-seen))
                        (setq char (tokenize-read-char stream))
                        (unless char 
-                         (error 'reader-error :stream stream))
+                         (error 'package-marker-error :stream stream))
                        (setq package-token (case-convert token escaped-indices))
                        (go next-token))
              else
@@ -234,3 +237,29 @@ escaped characters.."
            "KEYWORD")
       (global-package package-string)
       (package-name package)))
+
+;;;; Conditions
+
+(define-condition find-symbol-error (package-error reader-error)
+  ((symbol :reader reader-package-error-symbol :initarg :symbol))
+  (:report (lambda (c s)
+             (let ((errored-s (stream-error-stream c)))
+               (format
+                s "Error reading stream ~A: ~&Symbol named ~A is not external to package ~A."
+                errored-s
+                (reader-package-error-symbol c)
+                (package-error-package c))
+               (print-file?-stream-info errored-s :stream s)))))
+
+(define-condition package-marker-error (reader-error)
+  ()
+  (:report (lambda (c s)
+             (format s "Impermissible pattern of package markers seen while reading ~A."
+                     (stream-error-stream c))
+             (print-file?-stream-info (stream-error-stream c) :stream s))))
+
+(defun print-file?-stream-info (s &key (stream *standard-output*))
+  (when (typep s 'file-stream)
+    (format stream "~&In ~S at file position ~A."
+            (file-namestring s)
+            (file-position s))))

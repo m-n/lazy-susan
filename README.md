@@ -89,8 +89,6 @@ We haven't tried to include "invalid" syntax yet.
 
 We have so far ignored "potential numbers".
 
-Our error reporting is substandard.
-
 Deliberate Differences
 ----------------------
 
