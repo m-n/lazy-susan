@@ -81,31 +81,26 @@
 
 ;;;; A Readtable
 
-;;; There are two aspects to this: first, we have to set constituent
-;;; characters to our macro character so we can shadow the symbol
-;;; reading semantics. Second, we have to make our own string and
-;;; number macro character readers and use them because their
-;;; semantics depend on constituent traits.
-
 (defun rt (&optional (rt (load-time-value (copy-readtable nil))))
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
-  This sets non-whitespace, non-macro characters with code point 0 to 200
-  to be the lazy-susan's token-reader. Better solutions solicited."
+  This sets non-whitespace, non-macro characters with code point 0 to 126
+  to be the lazy-susan's token-reader. Better solutions solicited.
+  It also installs our string reader which uses our single-escapes as
+  escapes and our rational reader which allows digit-separators in #B,
+  #O, #X, and #R read numbers."
   (prog1 (setq rt (copy-readtable rt))
     (loop for i from 0 to 126
           for char = (code-char i)
           unless (or (get-macro-character char rt)
                      (whitespacep char)) do
           (set-macro-character char #'token-reader t rt))
-    ;; Strings are specified to use single-escape characters as escape
-    ;; So we have to shadow #\" to make it work with our idea of a single escape
-    (set-macro-character #\" #'read-string () rt)
-    (set-dispatch-macro-character #\# #\b #'read-rational rt)
-    (set-dispatch-macro-character #\# #\o #'read-rational rt)
-    (set-dispatch-macro-character #\# #\x #'read-rational rt)
-    (set-dispatch-macro-character #\# #\r #'read-rational rt)))
+    (set-macro-character #\" #'string-reader () rt)
+    (set-dispatch-macro-character #\# #\b #'rational-reader rt)
+    (set-dispatch-macro-character #\# #\o #'rational-reader rt)
+    (set-dispatch-macro-character #\# #\x #'rational-reader rt)
+    (set-dispatch-macro-character #\# #\r #'rational-reader rt)))
 
-(defun read-string (stream char &optional count)
+(defun string-reader (stream char &optional count)
   (declare (ignore count))
   (let ((end-char (closer char)))
     (with-output-to-string (s)
@@ -116,7 +111,7 @@
                             c)
                         s)))))
 
-(defun read-rational (stream char &optional count)
+(defun rational-reader (stream char &optional count)
   "Read a rational, set the *read-base* according to the standard syntax's
   idea of what it should be based on the macro-character."
   (let ((*read-base* (ecase char
