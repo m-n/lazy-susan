@@ -3,17 +3,10 @@
 (in-package #:lazy-susan)
 
 ;;;; Token Reader
-;;; The token-reader is is responsible for creating either a
-;;; symbol or a number.
-
-;;; Until we find a way to hijack the dispatch of constituent characters we
-;;; have to set the macro-character of characters that might start a token
-;;; to lazy-susan:token-reader
-
-;;; Creating our own token reader allows us to customize the way in which
-;;; symbols and numbers are read, such as allowing us to create package local
-;;; package nicknames, synonym symbols, and a visual marker for grouping digits
-;;; in large numbers
+;;; The token-reader is is responsible for creating either a symbol or
+;;; a number.  Until we find a way to hijack the dispatch of
+;;; constituent characters we have to set the macro-character of
+;;; characters that might start a token to lazy-susan:token-reader
 
 ;;;; Number Recognition.
 ;; CLHS 2.3.1 specifies the syntax of numbers
