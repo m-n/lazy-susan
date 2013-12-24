@@ -123,6 +123,7 @@ Readtables
     COLLECT-TOKEN:      Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
     IN-PROJECT:         IN-PACKAGE alternative. Also sets *readtable*.
     (SETF PROJECT-RT):  Set a packages default readtable for use with in-project.
+    SETUP-PROJECT-RT:   Set package's default *readtable* to a modified copy of readtable-expression.
 
 Readtble Setfs
 --------------
