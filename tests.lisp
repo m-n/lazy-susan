@@ -147,3 +147,11 @@
   (signals-a error (rtfs "#B2"))
   (signals-a error (rtfs "#oa"))
   (signals-a error (rtfs "#x ")))
+
+(deftest read-suppress
+  (eq (rtfs "a") (rtfs "#-(and) (progn lt:(bazbux))
+                        a"))
+  (progn (let ((*read-suppress* t))
+           (rtfs "aa:bb:cc:dd"))
+         t)
+  (signals-a ls::package-marker-error (rtfs "aa:bb:cc:dd")))
