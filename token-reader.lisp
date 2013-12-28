@@ -103,13 +103,16 @@ package and symbol mapping."
   (declare (ignorable count)
            (optimize debug))
   (unless char
-    (cerror "NIL instead of a char at token-reader." ())
+    (cerror "Just return." "NIL instead of a char at token-reader.")
     (return-from token-reader (values)))
   (multiple-value-bind (package-token
                         name-token
                         saw-escape-p
                         package-markers-seen)
-      (collect-token stream char)
+      (handler-bind ((package-marker-error (lambda (c)
+                                             (when *read-suppress*
+                                               (continue c)))))
+        (collect-token stream char))
     (unless *read-suppress*
       (unless (or package-token saw-escape-p)
         ;; if it's a number return it
@@ -129,8 +132,12 @@ package and symbol mapping."
 
 (defun collect-token (stream char)
   "Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
-So that token-reader can convert the tokens to a symbol or number. Keywords
-result in an empty string for the package token."
+So that token-reader can convert the tokens to a symbol or
+number. Keywords result in an empty string for the package
+token. Signals a continuable error if an incoherent pattern of package
+markers are seen. If continued, collect-token will continue reading
+until it looks like the token ends and will return unspecified
+results."
   (declare (optimize debug))
   (let ((package-markers-seen 0)
         package-token
@@ -142,16 +149,17 @@ result in an empty string for the package token."
                                       :fill-pointer t :adjustable t)
              with escaped-indices = ()        
              if (package-marker-p c)
-             do (progn (unless (or (zerop package-markers-seen)
-                                   *read-suppress*)
-                         (error 'package-marker-error :stream stream))
+             do (progn (unless (zerop package-markers-seen)
+                         (cerror "Continue reading, collecting bad token."
+                                 'package-marker-error :stream stream))
                        (incf package-markers-seen)
                        (when (package-marker-p (peek-char () stream))
                          (read-char stream)
                          (incf package-markers-seen))
                        (setq char (tokenize-read-char stream))
-                       (unless (or char *read-suppress*)
-                         (error 'package-marker-error :stream stream))
+                       (unless char
+                         (cerror "Continue reading, collecting bad token."
+                                 'package-marker-error :stream stream))
                        (setq package-token (case-convert token escaped-indices))
                        (go next-token))
              else
