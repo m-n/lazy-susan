@@ -22,7 +22,7 @@ to use:
    the number is read.
 5. Customizable treatment of tokens ending in a package marker, allowing
    the user to select one of three options:
-   * foo:(bar baz) reads (bar baz) with *package* bound to the package designated by foo.
+   * foo:(bar baz) reads (bar baz) with \*package\* bound to the package designated by foo.
      This is the default behavior of an (LS:RT).
    * foo: returns :foo.
    * error as usual.
@@ -121,7 +121,7 @@ Deliberate Differences
 ----------------------
 
 By default a token ending in a package marker will read the next form
-with *package* bound to the package designated by the token.
+with \*package\* bound to the package designated by the token.
 
 Using the default common lisp tokenization, characters can only have one
 syntax type, and both macro-character and single-escape are syntax types.
