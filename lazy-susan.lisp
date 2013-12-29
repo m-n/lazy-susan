@@ -156,3 +156,39 @@
   "Set a package's default readtable for use with in-project."
   `(setf (gethash (find-package ,package-designator) *project-rts*)
          ,rt))
+
+(defmacro setup-project-rt ((string-designator &optional (rt '(ls:rt)))
+                                                          &body chars-functions)
+  "Set package's default *readtable* to a modified copy of readtable-expression.
+
+  For use with in-project.
+
+  The chars-functions are alternating forms, the chars to be set as
+  macro characters for the functions.
+
+  Example call:
+
+      (setup-project-rt (my-package (ls:rt))
+        (#\# #\;) 'comment-form
+        #\!       'not-reader)
+
+  Sets #\! to a nonterminating macro character which uses the
+  hypothetical not-reader function -- which might read as (not
+  form). Use (#\!) to set it to a terminating macro character, and
+  sets #; to the hypothetical dispatching macro character for
+  commenting the following form. "
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (setf (project-rt ',string-designator)
+           (copy-readtable ,rt))
+     (in-project ,string-designator)
+     ,@(loop for (chars function) on chars-functions by #'cddr
+	     collect
+	     (if (and (consp chars) (cdr chars))
+		 `(set-dispatch-macro-character ,(car chars)
+						,(cadr chars)
+						,function)
+		 `(set-macro-character
+		   ,(if (consp chars)
+                        (car chars)
+                        chars)
+                   ,function ,(not (consp chars)))))))

@@ -26,12 +26,14 @@
    #:single-escapes
    #:whitespaces
 
+   #:trailing-package-marker
+
    ;; Reading
    #:rt
    #:token-reader
    #:collect-token
    #:in-project
    #:project-rt
-   #:trailing-package-marker
+   #:setup-project-rt
    ))
 
