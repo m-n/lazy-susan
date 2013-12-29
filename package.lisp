@@ -32,5 +32,6 @@
    #:collect-token
    #:in-project
    #:project-rt
+   #:trailing-package-marker
    ))
 

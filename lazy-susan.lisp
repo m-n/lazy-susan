@@ -153,6 +153,6 @@
   (gethash (find-package package-designator) *project-rts* *readtable*))
 
 (defsetf project-rt (package-designator) (rt)
-  "Set a packages default readtable for use with in-project."
+  "Set a package's default readtable for use with in-project."
   `(setf (gethash (find-package ,package-designator) *project-rts*)
          ,rt))

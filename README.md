@@ -20,6 +20,11 @@ to use:
 4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
+5. Customizable treatment of tokens ending in a package marker:
+   a. foo:(bar baz) reads (bar baz) with *package* bound to foo
+      this is the default behavior of an (LS:RT)
+   b. foo: returns :foo
+   c. error as usual
 
 LAZY-SUSAN achieves this by implementing the part of the reader
 algorithm that is used when collecting a token. To hijack CL's rt
@@ -73,8 +78,30 @@ using LAZY-SUSAN. The usual practice of writing in-package instead of
 the explicit cl:in-package only works so well because most packages
 use cl.
 
+Example: Trailing package marker
+--------------------------------
+
+    ;;;; In a context using an (ls:rt)
+    (eval-when (:compile-toplevel :load-toplevel :execute)
+      (setf (trailing-package-marker *readtable*) :keyword))
+
+    (eq :foo foo:)
+      -> t
+
+The options are:
+
+    ;; read the following form with *package* bound to the designated package
+    (setf (trailing-package-marker *readtable*) :read-form-in-package)
+
+    ;; return a keyword, as seen above
+    (setf (trailing-package-marker *readtable*) :keyword)
+
+    ;; signal an error
+    (setf (trailing-package-marker *readtable*) ())
+
 Limitations
 -----------
+
 We have to set the macro function of every character that can start a
 token to the LS:TOKEN-READER function to make a lazy-susan rt.
 This could be heavyweight if we wanted to allow non-ascii tokens.
@@ -92,6 +119,9 @@ We have so far ignored "potential numbers".
 Deliberate Differences
 ----------------------
 
+By default a token ending in a package marker will read the next form
+with *package* bound to the package designated by the token.
+
 Using the default common lisp tokenization, characters can only have one
 syntax type, and both macro-character and single-escape are syntax types.
 We allow characters to have multiple syntax types. For example, with the
@@ -105,7 +135,8 @@ Interface
 
 Package Local Nicknames
 -----------------------
-Interface burgled from SBCL
+
+Interface burgled or adapted from SBCL
 
     PACKAGE-LOCAL-NICKNAME:  Add a package local nickname at eval-always time.
     PACKAGE-LOCAL-NICKNAMES: Return the package local nicknames of this package as ((nn . long-name) ...)
@@ -122,10 +153,10 @@ Readtables
     TOKEN-READER:       The reader function used to tokenize a symbol or a number.
     COLLECT-TOKEN:      Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
     IN-PROJECT:         IN-PACKAGE alternative. Also sets *readtable*.
-    (SETF PROJECT-RT):  Set a packages default readtable for use with in-project.
+    (SETF PROJECT-RT):  Set a package's default readtable for use with in-project.
 
-Readtble Setfs
---------------
+Syntax Setfs
+------------
     DECIMAL-POINTS:     Within readtable, represent trait by characters.
     DIGIT-SEPARATORS:   Within readtable, represent trait by characters.
     EXPONENT-MARKERS:   Within readtable, represent trait by characters.
@@ -136,3 +167,4 @@ Readtble Setfs
     RATIO-MARKERS:      Within readtable, represent trait by characters.
     SINGLE-ESCAPES:     Within readtable, represent trait by characters.
     WHITESPACES:        Within readtable, represent trait by characters.
+    TRAILING-PACKAGE-MARKER: The behavior of the readtable when finding a trailing package marker.

@@ -109,9 +109,34 @@ package and symbol mapping."
                         name-token
                         saw-escape-p
                         package-markers-seen)
-      (handler-bind ((package-marker-error (lambda (c)
-                                             (when *read-suppress*
-                                               (continue c)))))
+      (handler-bind ((multiple-package-marker-error (lambda (c)
+                                                      (when *read-suppress*
+                                                        (continue c))))
+                     (trailing-package-marker-error
+                      (lambda (c)
+                        (if *read-suppress*
+                            (return-from token-reader ())
+                            (case (trailing-package-marker *readtable*)
+                              (:read-form-in-package
+                               (return-from token-reader
+                                 (let ((p
+                                        (find-package
+                                         (translate-package
+                                          (trailing-package-marker-error-token
+                                           c)))))
+                                   (unless p
+                                     (error
+                                      'find-package-error
+                                      :package
+                                      (trailing-package-marker-error-token c)
+                                      :stream (stream-error-stream c)))
+                                   (let ((*package* p))
+                                     (read stream t nil t)))))
+                              (:keyword (invoke-restart 'interpret-as-keyword))
+                              ((()))
+                              (t (error
+                                  "Invalid trailing-package-marker value ~A"
+                                  (trailing-package-marker *readtable*))))))))
         (collect-token stream char))
     (unless *read-suppress*
       (unless (or package-token saw-escape-p)
@@ -151,15 +176,24 @@ results."
              if (package-marker-p c)
              do (progn (unless (zerop package-markers-seen)
                          (cerror "Continue reading, collecting bad token."
-                                 'package-marker-error :stream stream))
+                                 'multiple-package-marker-error :stream stream))
                        (incf package-markers-seen)
-                       (when (package-marker-p (peek-char () stream))
+                       (when (and (peek-char () stream () ())
+                                  (package-marker-p (peek-char () stream)))
                          (read-char stream)
                          (incf package-markers-seen))
                        (setq char (tokenize-read-char stream))
                        (unless char
-                         (cerror "Continue reading, collecting bad token."
-                                 'package-marker-error :stream stream))
+                         (restart-case
+                             (error 'trailing-package-marker-error
+                                    :stream stream
+                                    :token (case-convert token escaped-indices))
+                           (interpret-as-keyword ()
+                             (unless (= package-markers-seen 1)
+                               (cerror "Continue reading, collecting bad token."
+                                       'multiple-package-marker-error :stream stream))
+                             (setq package-token "")
+                             (loop-finish))))
                        (setq package-token (case-convert token escaped-indices))
                        (go next-token))
              else
@@ -254,12 +288,32 @@ escaped characters.."
                 (package-error-package c))
                (print-file?-stream-info errored-s :stream s)))))
 
-(define-condition package-marker-error (reader-error)
+(define-condition find-package-error (package-error reader-error)
+  ()
+  (:report (lambda (c s)
+             (let ((errored-s (stream-error-stream c)))
+               (format
+                s "Error reading stream ~A~@
+                   Package named ~A  not found."
+                errored-s
+                (package-error-package c))
+               (print-file?-stream-info errored-s :stream s)))))
+
+(define-condition multiple-package-marker-error (reader-error)
   ()
   (:report (lambda (c s)
              (format
               s
               "Impermissible pattern of package markers seen while reading ~A."
+              (stream-error-stream c))
+             (print-file?-stream-info (stream-error-stream c) :stream s))))
+
+(define-condition trailing-package-marker-error (reader-error)
+  ((token :reader trailing-package-marker-error-token :initarg :token))
+  (:report (lambda (c s)
+             (format
+              s
+              "Trailing package marker seen while reading ~A."
               (stream-error-stream c))
              (print-file?-stream-info (stream-error-stream c) :stream s))))
 

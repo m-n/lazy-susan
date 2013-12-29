@@ -12,8 +12,7 @@
       (defvar *package-marker* (make-hash-table :test #'eq))
 
       (defun package-marker-p (c &optional (rt *readtable*))
-
-      (find c (package-markers rt) :test #'char-equal))
+        (find c (package-markers rt) :test #'char-equal))
 
       (defun package-markers (rt) (gethash rt *package-marker* (list #\:)))
 
@@ -91,3 +90,20 @@
 (defun constituentp (c)
   "Wrong, but works internally. "
   c)
+
+(defvar *trailing-package-marker* (make-hash-table :test #'eq))
+
+(defun trailing-package-marker (rt)
+  (gethash rt *trailing-package-marker* :read-form-in-package))
+
+(defsetf trailing-package-marker (rt) (behavior)
+  "The behavior of the readtable when finding a trailing package marker.
+
+  Accepts There values:
+   :keyword  -> creates a keyword, e.g. foo: reads as :foo
+   :read-form-in-package -> reads the next form with *package* bound
+                            to the package designated by the token,
+                            e.g. foo:(bar) reads with *package* bound
+                            to foo. foo::(bar) has identical meaning.
+   CL:NIL -> Error"
+  `(setf (gethash ,rt *trailing-package-marker*) ,behavior))

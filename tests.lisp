@@ -28,12 +28,13 @@
 (defmacro test-and (&body forms)
   (let ((f (gensym)))
     (cond ((null forms) t)
-          (t `(let ((,f ,(car forms)))
+          (t `(let (,f)
                 (declare (special current-test failing-tests))
-                (test-and ,@(cdr forms))
-                (when  (not ,f)
-                  (progn (format t "~&  Failing Form ~S" ',(car forms))
-                         (push current-test failing-tests))))))))
+                (unwind-protect (setq ,f  ,(car forms))
+                  (when  (not ,f)
+                    (progn (format t "~&  Failing Form ~S" ',(car forms))
+                           (push current-test failing-tests))))
+                (test-and ,@(cdr forms)))))))
 
 (defmacro deftest (name &body body)
   `(progn (pushnew ',name *tests*)
@@ -152,6 +153,24 @@
   (eq (rtfs "a") (rtfs "#-(and) (progn lt:(bazbux))
                         a"))
   (progn (let ((*read-suppress* t))
-           (rtfs "aa:bb:cc:dd"))
+           (rtfs "aa:bb:cc:dd")
+           (rtfs "aa::"))
          t)
-  (signals-a ls::package-marker-error (rtfs "aa:bb:cc:dd")))
+  (signals-a ls::multiple-package-marker-error (rtfs "aa:bb:cc:dd")))
+
+(deftest trailing-keyword-read-form-in-package
+  (setf (trailing-package-marker *rt*) :read-form-in-package)
+  (equal (rtfs "(car (ls::new-symbol-please))")
+         (rtfs "ls:(car (new-symbol-please))"))
+  (equal (rtfs "ls:(car (new-symbol-please))")
+         (rtfs "ls::(car (new-symbol-please))")))
+
+(deftest trailing-keyword-keyword
+  (setf (trailing-package-marker *rt*) :keyword)
+  (equal (rtfs ":foo") (rtfs "foo:"))
+  (equal (rtfs "foo: ") (rtfs "foo:("))
+  (signals-a error (rtfs "foo:: ")))
+
+(deftest trailing-keyword-nil
+  (prog1 t (setf (trailing-package-marker *rt*) ()))
+  (signals-a ls::trailing-package-marker-error (rtfs "foo: (")))
