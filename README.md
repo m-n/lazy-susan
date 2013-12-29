@@ -20,11 +20,12 @@ to use:
 4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
-5. Customizable treatment of tokens ending in a package marker, giving three options:
-   * foo:(bar baz) reads (bar baz) with *package* bound to foo
-     this is the default behavior of an (LS:RT)
-   * foo: returns :foo
-   * error as usual
+5. Customizable treatment of tokens ending in a package marker, allowing
+   the user to select one of three options:
+   * foo:(bar baz) reads (bar baz) with *package* bound to the package designated by foo.
+     This is the default behavior of an (LS:RT).
+   * foo: returns :foo.
+   * error as usual.
 
 LAZY-SUSAN achieves this by implementing the part of the reader
 algorithm that is used when collecting a token. To hijack CL's rt
