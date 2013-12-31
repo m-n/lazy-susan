@@ -32,8 +32,7 @@
    #:rt
    #:token-reader
    #:collect-token
-   #:in-project
-   #:project-rt
-   #:setup-project-rt
+   #:in-package/rt
+   #:package-rt
+   #:setup-package-rt
    ))
-

@@ -64,15 +64,15 @@ Example: Package Local Nickname
 
     (package-local-nickname re cl-ppcre)
 
-    (setf (ls:project-rt 'example) (ls:rt))
+    (setf (ls:package-rt 'example) (ls:rt))
 
     ;;;; example.lisp
 
-    (ls:in-project #:example)
+    (ls:in-package/rt #:example)
 
     (re:scan-to-strings "(\\w+)" "abc def")
 
-Note that it's necessary to package qualify IN-PROJECT even though we
+Note that it's necessary to package qualify IN-PACKAGE/RT even though we
 used LAZY-SUSAN. This is because example.lisp could be read from an
 environment that is in any arbitrary \*package\* -- possibly one not
 using LAZY-SUSAN. The usual practice of writing in-package instead of
@@ -153,9 +153,9 @@ Readtables
     RT:                 Return copy of ReadTable with lazy-susan features enabled. ASCII only.
     TOKEN-READER:       The reader function used to tokenize a symbol or a number.
     COLLECT-TOKEN:      Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
-    IN-PROJECT:         IN-PACKAGE alternative. Also sets *readtable*.
-    (SETF PROJECT-RT):  Set a package's default readtable for use with in-project.
-    SETUP-PROJECT-RT:   Set package's default *readtable* to a modified copy of readtable-expression.
+    IN-PACKAGE/RT:         IN-PACKAGE alternative. Also sets *readtable*.
+    (SETF PACKAGE-RT):  Set a package's default readtable for use with in-package/rt.
+    SETUP-PACKAGE-RT:   Set package's default *readtable* to a modified copy of readtable-expression.
 
 Syntax Setfs
 ------------

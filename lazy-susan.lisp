@@ -146,39 +146,39 @@
 
 ;;;; Convenient way to use a rt
 
-(defmacro in-project (package-designator &optional rt)
+(defmacro in-package/rt (package-designator &optional rt)
   "IN-PACKAGE alternative. Also sets *readtable*.
-  Default RT set by (setf project-rt)."
+  Default RT set by (setf package-rt)."
   (with-gensyms (r p)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (let  ((,r ,rt)
               (,p ',package-designator))
-         (unless ,r (setq ,r (project-rt ,p)))
+         (unless ,r (setq ,r (package-rt ,p)))
          (prog1 (setq *package* (find-package ,p))
            (setq *readtable* ,r))))))
 
-(defvar *project-rts* (make-hash-table :test 'equal))
+(defvar *package-rts* (make-hash-table :test 'equal))
 
-(defun project-rt (package-designator)
-  (gethash (find-package package-designator) *project-rts* *readtable*))
+(defun package-rt (package-designator)
+  (gethash (find-package package-designator) *package-rts* *readtable*))
 
-(defsetf project-rt (package-designator) (rt)
-  "Set a package's default readtable for use with in-project."
-  `(setf (gethash (find-package ,package-designator) *project-rts*)
+(defsetf package-rt (package-designator) (rt)
+  "Set a package's default readtable for use with in-package/rt."
+  `(setf (gethash (find-package ,package-designator) *package-rts*)
          ,rt))
 
-(defmacro setup-project-rt ((string-designator &optional (rt '(ls:rt)))
+(defmacro setup-package-rt ((string-designator &optional (rt '(ls:rt)))
                                                           &body chars-functions)
   "Set package's default *readtable* to a modified copy of readtable-expression.
 
-  For use with in-project.
+  For use with in-package/rt.
 
   The chars-functions are alternating forms, the chars to be set as
   macro characters for the functions.
 
   Example call:
 
-      (setup-project-rt (my-package (ls:rt))
+      (setup-package-rt (my-package (ls:rt))
         (#\# #\;) 'comment-form
         #\!       'not-reader
         ls:digit-separators '(#\_))
@@ -189,9 +189,9 @@
   sets #; to the hypothetical dispatching macro character for
   commenting the following form. "
   `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (setf (project-rt ',string-designator)
+     (setf (package-rt ',string-designator)
            (copy-readtable ,rt))
-     (in-project ,string-designator)
+     (in-package/rt ,string-designator)
      ,@(loop for (chars function) on chars-functions by #'cddr
 	     collect
 	     (cond ((and (consp chars) (cdr chars))
