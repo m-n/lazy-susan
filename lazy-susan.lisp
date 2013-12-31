@@ -180,7 +180,8 @@
 
       (setup-project-rt (my-package (ls:rt))
         (#\# #\;) 'comment-form
-        #\!       'not-reader)
+        #\!       'not-reader
+        ls:digit-separators '(#\_))
 
   Sets #\! to a nonterminating macro character which uses the
   hypothetical not-reader function -- which might read as (not
@@ -193,12 +194,17 @@
      (in-project ,string-designator)
      ,@(loop for (chars function) on chars-functions by #'cddr
 	     collect
-	     (if (and (consp chars) (cdr chars))
-		 `(set-dispatch-macro-character ,(car chars)
-						,(cadr chars)
-						,function)
-		 `(set-macro-character
-		   ,(if (consp chars)
-                        (car chars)
-                        chars)
-                   ,function ,(not (consp chars)))))))
+	     (cond ((and (consp chars) (cdr chars))
+                    `(set-dispatch-macro-character ,(car chars)
+                                                   ,(cadr chars)
+                                                   ,function))
+                   ((or (characterp chars) (listp chars))
+                    `(set-macro-character
+                      ,(if (consp chars)
+                           (car chars)
+                           chars)
+                      ,function ,(not (consp chars))))
+                   ((symbolp chars)
+                    `(setf (,(find-symbol (symbol-name chars) :ls)
+                             *readtable*)
+                           ,function))))))
