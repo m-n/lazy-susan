@@ -85,9 +85,9 @@
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
   This sets non-whitespace, non-macro characters with code point 0 to 126
   to be the lazy-susan's token-reader. Better solutions solicited.
-  It also installs our string reader which uses our single-escapes as
-  escapes and our rational reader which allows digit-separators in #B,
-  #O, #X, and #R read numbers."
+  It also installs our string and uninterned symbol readers which use our
+  single-escapes as escapes and our rational reader which allows
+  digit-separators in #B, #O, #X, and #R read numbers."
   (prog1 (setq rt (copy-readtable rt))
     (loop for i from 0 to 126
           for char = (code-char i)
@@ -95,6 +95,7 @@
                      (whitespacep char)) do
           (set-macro-character char #'token-reader t rt))
     (set-macro-character #\" #'string-reader () rt)
+    (set-dispatch-macro-character #\# #\: #'uninterned-symbol-reader rt)
     (set-dispatch-macro-character #\# #\b #'rational-reader rt)
     (set-dispatch-macro-character #\# #\o #'rational-reader rt)
     (set-dispatch-macro-character #\# #\x #'rational-reader rt)
@@ -133,6 +134,15 @@
                    :base *read-base*
                    :stream stream))
           number)))))
+
+(defun uninterned-symbol-reader (stream char &optional count)
+  (declare (ignore char))
+  (multiple-value-bind (package-token name-token saw-escape-p package-markers-seen)
+      (collect-token stream (read-char stream t t t))
+    (declare (ignore saw-escape-p package-token))
+    (when (or count (plusp package-markers-seen))
+      (error 'reader-error :stream stream))
+    (make-symbol name-token)))
 
 ;;;; Convenient way to use a rt
 

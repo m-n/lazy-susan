@@ -33,7 +33,7 @@ machinery we have to use a rt in which our TOKEN-READER read macro has
 been set as the macro function for every character that can start a
 symbol or number. You can get such a rt -- for ascii characters on
 lisps that use a superset of ascii -- by calling (ls:rt). (ls:rt) also
-sets a doublequote macro character so strings can use our idea of a
+sets doublequote and #: macro characters so they can use our idea of a
 single escape, and a macro function for #B, #O, #X, #R so that they
 can use digit separators.
 

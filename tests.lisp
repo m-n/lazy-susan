@@ -86,8 +86,11 @@
   (signals-a reader-error (rtfs "too:many:packages"))
   (string-equal (package-name (symbol-package (rtfs "lazy-susan:token-reader")))
                 "LAZY-SUSAN")
-  (string-equal (package-name (symbol-package (rtfs "lazy-susan::internalsymbol")))
-                "LAZY-SUSAN"))
+  (string= (package-name (symbol-package (rtfs "lazy-susan::internalsymbol")))
+           "LAZY-SUSAN")
+  (string= (rtfs "#:foo") "FOO")
+  (string= (rtfs "#:f\\oo") "FoO")
+  (null (symbol-package (rtfs "#:foo"))))
 
 (package-local-nickname :lazy-susan-test-cl :cl)
 
