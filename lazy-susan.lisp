@@ -152,7 +152,9 @@
   (with-gensyms (r p)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (let  ((,r ,rt)
-              (,p ',package-designator))
+              (,p ,(if (packagep package-designator)
+                       (package-name package-designator)
+                       (string package-designator))))
          (unless ,r (setq ,r (package-rt ,p)))
          (prog1 (setq *package* (find-package ,p))
            (setq *readtable* ,r))))))
@@ -167,9 +169,12 @@
   `(setf (gethash (find-package ,package-designator) *package-rts*)
          ,rt))
 
-(defmacro setup-package-rt ((string-designator &optional (rt '(ls:rt)))
-                                                          &body chars-functions)
-  "Set package's default *readtable* to a modified copy of readtable-expression.
+(defmacro setup-package-rt ((package-designator &optional (rt-form '(ls:rt)))
+                                                &body chars-functions)
+  "Set package's default *readtable* to a modified copy of rt-form.
+
+  rt-form should be a form which evaluates to a readtable, but not a
+  readatbe, because readtables are not dumpable.
 
   For use with in-package/rt.
 
@@ -188,23 +193,26 @@
   form). Use (#\!) to set it to a terminating macro character, and
   sets #; to the hypothetical dispatching macro character for
   commenting the following form. "
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
-     (setf (package-rt ',string-designator)
-           (copy-readtable ,rt))
-     (in-package/rt ,string-designator)
-     ,@(loop for (chars function) on chars-functions by #'cddr
-	     collect
-	     (cond ((and (consp chars) (cdr chars))
-                    `(set-dispatch-macro-character ,(car chars)
-                                                   ,(cadr chars)
-                                                   ,function))
-                   ((or (characterp chars) (listp chars))
-                    `(set-macro-character
-                      ,(if (consp chars)
-                           (car chars)
-                           chars)
-                      ,function ,(not (consp chars))))
-                   ((symbolp chars)
-                    `(setf (,(find-symbol (symbol-name chars) :ls)
-                             *readtable*)
-                           ,function))))))
+  (let ((package-string (if (packagep package-designator)
+                            (package-name package-designator)
+                            (string package-designator))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (setf (package-rt ,package-string)
+             (copy-readtable ,rt-form))
+       (in-package/rt ,package-string)
+       ,@(loop for (chars function) on chars-functions by #'cddr
+               collect
+               (cond ((and (consp chars) (cdr chars))
+                      `(set-dispatch-macro-character ,(car chars)
+                                                     ,(cadr chars)
+                                                     ,function))
+                     ((or (characterp chars) (listp chars))
+                      `(set-macro-character
+                        ,(if (consp chars)
+                             (car chars)
+                             chars)
+                        ,function ,(not (consp chars))))
+                     ((symbolp chars)
+                      `(setf (,(find-symbol (symbol-name chars) :ls)
+                               *readtable*)
+                             ,function)))))))
