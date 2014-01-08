@@ -1,7 +1,7 @@
 (defpackage #:lazy-susan-test
   (:use #:cl #:lazy-susan)
-  (:shadowing-import-from #:lazy-susan
-                          #:looks-like-a-number))
+  (:import-from #:lazy-susan
+                #:looks-like-a-number))
 
 (in-package #:lazy-susan-test)
 
@@ -15,22 +15,17 @@
 (defun run-tests ()
   (let (failing-tests)
     (declare (special failing-tests))
-    (mapcar (lambda (test)
-              ;(format *trace-output* "~&Testing ~A." test)
-              (if (funcall test)
-                  t))
-            (reverse *tests*))
-    (print
-     (if failing-tests
-         (cons :failed-tests failing-tests)
-         :ok))))
+    (mapc #'funcall (reverse *tests*))
+    (print (if failing-tests
+               (cons :failed-tests failing-tests)
+               :ok))))
 
 (defmacro test-and (&body forms)
   (let ((f (gensym)))
     (cond ((null forms) t)
           (t `(let (,f)
                 (declare (special current-test failing-tests))
-                (unwind-protect (setq ,f  ,(car forms))
+                (unwind-protect (setq ,f ,(car forms))
                   (when  (not ,f)
                     (progn (format t "~&  Failing Form ~S" ',(car forms))
                            (push current-test failing-tests))))
