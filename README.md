@@ -16,7 +16,7 @@ to use:
 1. Package local nicknames
 2. Synonym symbols.
 3. Redefinition of constituent traits
-   (e.g. treat #\\: as something other than a package seperator.)
+   (e.g. treat #\\: as something other than a package separator.)
 4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
