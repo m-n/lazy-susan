@@ -1,7 +1,10 @@
 Maybes
-  Number?
-    Export looks-like-a-number style functionality
   Readtable Support
     ANSI only, or all chars, or better way to hijack rt?
-    SLIME integration
+  Number?
+    Export looks-like-a-number style functionality
   Find a method for reading cl symbols with downcasing reader
+SLIME integration
+  Recognize package set by in-package/rt
+  Readtable for slime-compile-defun
+  Autocomplete and arglist hinting

@@ -125,6 +125,8 @@
 
 (deftest number-readers
   (symbolp (rtfs "*"))
+  (eql (- 1) (rtfs "-1"))
+  (symbolp (rtfs "--1"))
   (zerop (rtfs "#b0"))
   (zerop (rtfs "#o0"))
   (zerop (rtfs "#x0"))
@@ -161,7 +163,8 @@
   (equal (rtfs "(car (ls::new-symbol-please))")
          (rtfs "ls:(car (new-symbol-please))"))
   (equal (rtfs "ls:(car (new-symbol-please))")
-         (rtfs "ls::(car (new-symbol-please))")))
+         (rtfs "ls::(car (new-symbol-please))"))
+  (null (rtfs "#+(or)irrelevent::t ()")))
 
 (deftest trailing-keyword-keyword
   (setf (trailing-package-marker *rt*) :keyword)

@@ -14,17 +14,17 @@
 ;; wherein implementations are allowed to extend the number syntax.
 (defun looks-like-a-number (string)
   "Check to see if the string can be parsed as a number."
-  (let ((token (remove-if #'digit-separator-p string)))
-    (unless (plusp (length token))
-      (return-from looks-like-a-number ()))
-    (when (or (plus-sign-p (schar token 0))
-              (minus-sign-p (schar token 0)))
-      ;; it's valid syntax for any number to start with single sign
-      (setq token (subseq token 1)))
-    (and (or (possible-integer token)
-             (possible-ratio token)
-             (possible-float token))
-         token
+  (let* ((token (remove-if #'digit-separator-p string))
+         (signless (progn (unless (plusp (length token))
+                            (return-from looks-like-a-number ()))
+                          (if (or (plus-sign-p (schar token 0))
+                                  (minus-sign-p (schar token 0)))
+                              (subseq token 1)
+                              token))))
+    (and (or (possible-integer signless)
+             (possible-ratio signless)
+             (possible-float signless))
+         signless
          (let ((*readtable* (load-time-value (copy-readtable nil))))
            (read-from-string token nil nil)))))
 
