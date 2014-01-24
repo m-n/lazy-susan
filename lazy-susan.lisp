@@ -192,7 +192,10 @@
   hypothetical not-reader function -- which might read as (not
   form). Use (#\!) to set it to a terminating macro character, and
   sets #; to the hypothetical dispatching macro character for
-  commenting the following form. "
+  commenting the following form.
+
+  If SWANK is present when this is form executed, it will associate
+  the package with the new readtable in SWANK:*READTABLE-ALIST*."
   (let ((package-string (if (packagep package-designator)
                             (package-name package-designator)
                             (string package-designator))))
@@ -215,4 +218,11 @@
                      ((symbolp chars)
                       `(setf (,(find-symbol (symbol-name chars) :ls)
                                *readtable*)
-                             ,function)))))))
+                             ,function))))
+       (attempt-swank-register-rt ,package-string))))
+
+(defun attempt-swank-register-rt (package-string)
+  (when (find-package "SWANK")
+    (assocf package-string *readtable*
+            (symbol-value (find-symbol "*READTABLE-ALIST*" "SWANK"))
+            :test #'string=)))
