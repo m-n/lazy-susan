@@ -8,6 +8,15 @@
                `(,n (gensym ,(concatenate 'string (symbol-name n) "-"))))
      ,@body))
 
+(defmacro eval-always (&body body)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+    ,@body))
+
+(defun package-string (package-designator)
+  (if (packagep package-designator)
+      (package-name package-designator)
+      (string package-designator)))
+
 (defmacro idoveq ((index-var value-var seq &optional return) &body body)
   "indexed-do-vector"
   (let ((length (gensym))
@@ -29,17 +38,17 @@
 
 (defmacro assocf (key val place &rest keyargs &environment env)
   "Sets first instance of key in alist to val, adding entry if necessary."
-  (multiple-value-bind (vars vals nv set access)
+  (multiple-value-bind (vars vals bind set access)
       (get-setf-expansion place env)
     (with-gensyms (gkey gval cons gaccess)
       `(let ((,gkey ,key)
              (,gval ,val))
          (let* (,@(mapcar #'list vars vals)
-                (,gaccess ,access)
-                (,(car nv)
-                 (let ((,cons (assoc ,gkey ,gaccess ,@keyargs)))
-                   (if ,cons
-                       (prog1 ,gaccess
-                         (setf (cdr ,cons) ,gval))
-                       (acons ,gkey ,gval ,gaccess)))))
-           ,set)))))
+                (,gaccess ,access))
+           (multiple-value-bind ,bind
+               (let ((,cons (assoc ,gkey ,gaccess ,@keyargs)))
+                 (if ,cons
+                     (prog1 ,gaccess
+                       (setf (cdr ,cons) ,gval))
+                     (acons ,gkey ,gval ,gaccess)))
+             ,set))))))

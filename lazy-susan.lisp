@@ -13,7 +13,7 @@
 (defmacro package-local-nickname
     (local-nickname actual-package &optional (package *package*))
   "Add a package local nickname at eval-always time."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-always
      (pushnew (cons ',local-nickname ',actual-package)
               (gethash ,package *package-translations*)
               :test 'equal)))
@@ -21,7 +21,7 @@
 (defmacro remove-package-local-nickname
     (local-nickname &optional (package *package*))
   "Remove a package local nickname at eval-always time."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-always
      (setf (gethash ,package *package-translations*)
            (remove ',local-nickname (gethash ,package *package-translations*)
                    :key #'car :test #'string=))))
@@ -53,14 +53,14 @@
                           &optional (here *package*))
   "Set the symbol to read as another symbol at eval-always time.
   This setting is package-local."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-always
      (pushnew (cons ',synonym-symbol ',canonical-symbol)
               (gethash ,here *synonym-translations*)
               :test 'eq :key 'car)))
 
 (defmacro clear-synonym-symbols (&optional (package *package*))
   "Remove symbol translations from package eval-always time."
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-always
      (setf (gethash ,package *synonym-translations*) ())))
 
 (defun local-synonym-alist (&optional (here *package*))
@@ -150,11 +150,9 @@
   "IN-PACKAGE alternative. Also sets *readtable*.
   Default RT set by (setf package-rt)."
   (with-gensyms (r p)
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
+    `(eval-always
        (let  ((,r ,rt)
-              (,p ,(if (packagep package-designator)
-                       (package-name package-designator)
-                       (string package-designator))))
+              (,p ,(package-string package-designator)))
          (unless ,r (setq ,r (package-rt ,p)))
          (prog1 (setq *package* (find-package ,p))
            (setq *readtable* ,r))))))
@@ -162,12 +160,34 @@
 (defvar *package-rts* (make-hash-table :test 'equal))
 
 (defun package-rt (package-designator)
-  (gethash (find-package package-designator) *package-rts* *readtable*))
+  "Return the packages default readtable.
+
+This could be one of three values, in order of preference:
+
+  1. The LS default as set by (setf package-rt) or setup-package-rt
+  2. The associated readtable in swank:*readtable-alist*
+  3. The value of *readtable*"
+  (gethash (find-package package-designator)
+           *package-rts*
+           (or (when (find-package "SWANK")
+                 (cdr (assoc (package-string package-designator)
+                             (symbol-value (find-symbol "*READTABLE-ALIST*" "SWANK"))
+                             :test #'string=)))
+               *readtable*)))
 
 (defsetf package-rt (package-designator) (rt)
-  "Set a package's default readtable for use with in-package/rt."
-  `(setf (gethash (find-package ,package-designator) *package-rts*)
-         ,rt))
+  "Set a package's default readtable for use with in-package/rt.
+
+Also associates the readtable with the package in slime if swank is loaded."
+  `(prog1 (setf (gethash (find-package ,package-designator) *package-rts*)
+                ,rt)
+     (register-rt-swank ,rt (package-string ,package-designator))))
+
+(defun register-rt-swank (rt package-designator)
+  (when (find-package "SWANK")
+    (assocf package-designator rt
+            (symbol-value (find-symbol "*READTABLE-ALIST*" "SWANK"))
+            :test #'string=)))
 
 (defmacro setup-package-rt ((package-designator &optional (rt-form '(ls:rt)))
                                                 &body chars-functions)
@@ -196,10 +216,8 @@
 
   If SWANK is present when this is form executed, it will associate
   the package with the new readtable in SWANK:*READTABLE-ALIST*."
-  (let ((package-string (if (packagep package-designator)
-                            (package-name package-designator)
-                            (string package-designator))))
-    `(eval-when (:compile-toplevel :load-toplevel :execute)
+  (let ((package-string (package-string package-designator)))
+    `(eval-always
        (setf (package-rt ,package-string)
              (copy-readtable ,rt-form))
        (in-package/rt ,package-string)
@@ -218,11 +236,4 @@
                      ((symbolp chars)
                       `(setf (,(find-symbol (symbol-name chars) :ls)
                                *readtable*)
-                             ,function))))
-       (attempt-swank-register-rt ,package-string))))
-
-(defun attempt-swank-register-rt (package-string)
-  (when (find-package "SWANK")
-    (assocf package-string *readtable*
-            (symbol-value (find-symbol "*READTABLE-ALIST*" "SWANK"))
-            :test #'string=)))
+                             ,function)))))))
