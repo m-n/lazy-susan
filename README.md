@@ -1,7 +1,10 @@
 LAZY-SUSAN
 ==========
 
-A more flexible readtable (rt).
+Just as a lazy susan is a more flexible and convenient partial table
+which rests on top of a traditional table, LAZY-SUSAN is a flexible
+and convenient partial reimplementation of Common Lisp's readtables
+which sits atop them.
 
 __Status__: Experimental, fun.
 
@@ -28,14 +31,14 @@ to use:
    * error as usual.
 
 LAZY-SUSAN achieves this by implementing the part of the reader
-algorithm that is used when collecting a token. To hijack CL's rt
-machinery we have to use a rt in which our TOKEN-READER read macro has
-been set as the macro function for every character that can start a
-symbol or number. You can get such a rt -- for ascii characters on
-lisps that use a superset of ascii -- by calling (ls:rt). (ls:rt) also
-sets doublequote and #: macro characters so they can use our idea of a
-single escape, and a macro function for #B, #O, #X, #R so that they
-can use digit separators.
+algorithm that is used when collecting a token. To hijack CL's
+readtable (rt) machinery we have to use a rt in which our TOKEN-READER
+read macro has been set as the macro function for every character that
+can start a symbol or number. You can get such a rt -- for ascii
+characters on lisps that use a superset of ascii -- by calling
+(LS:RT). (LS:RT) also sets doublequote and #: macro characters so they
+can use our idea of a single escape, and a macro function for #B, #O,
+#X, #R so that they can use digit separators.
 
 Example: Traits
 ---------------
@@ -58,26 +61,27 @@ Example: Package Local Nickname
     ;;;; package.lisp
 
     (defpackage #:example
-      (:use #:cl #:lazy-susan))
+      (:use #:cl))
 
     (in-package #:example)
 
-    (package-local-nickname re cl-ppcre)
+    (ls:package-local-nickname re cl-ppcre)
 
     (setf (ls:package-rt 'example) (ls:rt))
 
     ;;;; example.lisp
 
+    (in-package #:example)
+
     (ls:in-package/rt #:example)
 
     (re:scan-to-strings "(\\w+)" "abc def")
 
-Note that it's necessary to package qualify IN-PACKAGE/RT even though we
-used LAZY-SUSAN. This is because example.lisp could be read from an
-environment that is in any arbitrary \*package\* -- possibly one not
-using LAZY-SUSAN. The usual practice of writing in-package instead of
-the explicit cl:in-package only works so well because most packages
-use cl.
+The effect of the IN-PACKAGE call above would be redundant and
+removed, except that SLIME uses it to determine a buffer's
+package. The behavior of SLIME-COMPILE-DEFUN is very confusing when SLIME
+incorrectly determines a buffers package, and so we are currently
+rethinking this part of LS's interface.
 
 Example: Trailing package marker
 --------------------------------
@@ -103,15 +107,19 @@ The options are:
 Limitations
 -----------
 
+The package local nicknames only work for reading symbols, not for
+CL:FIND-PACKAGE, CL:PACKAGE-NICKNAMES, and friends.
+
 We have to set the macro function of every character that can start a
-token to the LS:TOKEN-READER function to make a lazy-susan rt.
+token to the LS:TOKEN-READER function to make a LAZY-SUSAN rt.
 This could be heavyweight if we wanted to allow non-ascii tokens.
 
-In general we haven't thought much about print read consistency. In
-particular the escape character in strings is (by the CLHS) any
-character with syntax type single-escape, and we haven't made any
-attempt to change their print behavior when we add or remove
-single-escape characters.
+We don't change printing behavior at all. This can cause print read
+inconsistency of strings and symbols if the escape characters are
+changed.
+
+SLIME integration is very incomplete. See below and at
+https://github.com/m-n/lazy-susan/issues/1 for details.
 
 We haven't tried to include "invalid" syntax yet.
 
@@ -121,7 +129,7 @@ Deliberate Differences
 ----------------------
 
 By default a token ending in a package marker will read the next form
-with \*package\* bound to the package designated by the token.
+with \*PACKAGE\* bound to the package designated by the token.
 
 Using the default common lisp tokenization, characters can only have one
 syntax type, and both macro-character and single-escape are syntax types.
@@ -170,3 +178,13 @@ Syntax Setfs
     SINGLE-ESCAPES:     Within readtable, represent trait by characters.
     WHITESPACES:        Within readtable, represent trait by characters.
     TRAILING-PACKAGE-MARKER: The behavior of the readtable when finding a trailing package marker.
+
+SLIME Integration
+=================
+
+SETUP-PACKAGE-RT and (SETF PACKAGE-RT) associate the package to the
+readtable on SLIME's SWANK:\*READTABLE-ALIST\*. However, symbol
+completion and argument list hinting are currently lost when using
+LS's package local nicknames, and we have to start the file with
+IN-PACKAGE instead of LS:IN-PACKAGE/RT for SLIME to correctly determine
+the buffer's package (which is important for at least SLIME-COMPILE-DEFUN).
