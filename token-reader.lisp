@@ -33,7 +33,7 @@
            (read-from-string standardized-token nil nil)))))
 
 (defun standard-number-syntax (string)
-  "take a string, whose digit separators have already been removed,
+  "Take a string, whose digit separators have already been removed,
 and replace number related syntax of the current rt with standard syntax."
   (let ((out (make-array (length string) :element-type 'character
                          :fill-pointer 0 )))
