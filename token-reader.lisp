@@ -13,7 +13,7 @@
 ;; We do not yet respect the next section, "potential numbers",
 ;; wherein implementations are allowed to extend the number syntax.
 (defun looks-like-a-number (string)
-  "Check to see if the string can be parsed as a number."
+  "Check to see if the string can be parsed as a number. If so, return the number."
   (let* ((token (remove-if #'digit-separator-p string))
          (signless (progn (unless (plusp (length token))
                             (return-from looks-like-a-number ()))
@@ -25,8 +25,28 @@
              (possible-ratio signless)
              (possible-float signless))
          signless
-         (let ((*readtable* (load-time-value (copy-readtable nil))))
-           (read-from-string token nil nil)))))
+         (let* (;; standardized-token must be done within dynamic
+                ;; scope of the *readtable* for which we are parsing
+                ;; the number
+                (standardized-token (standard-number-syntax token))
+                (*readtable* (load-time-value (copy-readtable nil))))
+           (read-from-string standardized-token nil nil)))))
+
+(defun standard-number-syntax (string)
+  "take a string, whose digit separators have already been removed,
+and replace number related syntax of the current rt with standard syntax."
+  (let ((out (make-array (length string) :element-type 'character
+                         :fill-pointer 0 )))
+    (loop for c across string
+          do (vector-push (cond ((decimal-point-p c) #\.)
+                                ((plus-sign-p c) #\+)
+                                ((minus-sign-p c) #\-)
+                                ((ratio-marker-p c) #\/)
+                                ;; oops, what's it mean to replace one of these?
+                                ;; ((exponent-marker-p c))
+                                (t c))
+              out))
+    out))
 
 (defun decimal-digit-p (c) (find c "0123456789"))
 

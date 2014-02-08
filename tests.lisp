@@ -41,7 +41,10 @@
                   (pushnew current-test failing-tests)
                   (format t "Failed; threw ~S~&" c)))))))
 
-(defun sllan (s) (looks-like-a-number s))
+(defun sllan (s)
+  (let ((*readtable* *rt*))
+    (numberp (looks-like-a-number s))))
+
 (deftest it-looks-like-a-number
   (sllan "1")
   (sllan "1.")
@@ -51,7 +54,12 @@
   (sllan "10e6")
   (sllan "1d0")
   (sllan "1/2")
-  (sllan "11/22"))
+  (sllan "11/22")
+  (progn (setf (decimal-points *rt*) '(#\!))
+         (sllan "1!1"))
+  (not (sllan "1.1"))
+  (progn (setf (decimal-points *rt*) '(#\.))
+         (sllan "1.1")))
 
 (deftest does-not-look-numberlike
   (not (sllan "1z000z000"))
