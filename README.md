@@ -19,7 +19,7 @@ to use:
 1. Package local nicknames
 2. Synonym symbols.
 3. Redefinition of constituent traits
-   (e.g. treat #\\: as something other than a package separator.)
+   (e.g. treat \#\\: as something other than a package separator.)
 4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
@@ -36,9 +36,9 @@ readtable (rt) machinery we have to use a rt in which our TOKEN-READER
 read macro has been set as the macro function for every character that
 can start a symbol or number. You can get such a rt -- for ascii
 characters on lisps that use a superset of ascii -- by calling
-(LS:RT). (LS:RT) also sets doublequote and #: macro characters so they
-can use our idea of a single escape, and a macro function for #B, #O,
-#X, #R so that they can use digit separators.
+(LS:RT). (LS:RT) also sets doublequote and \#: macro characters so they
+can use our idea of a single escape, and a macro function for \#B, \#O,
+\#X, \#R so that they can use digit separators.
 
 Example: Traits
 ---------------
@@ -134,7 +134,7 @@ with \*PACKAGE\* bound to the package designated by the token.
 Using the default common lisp tokenization, characters can only have one
 syntax type, and both macro-character and single-escape are syntax types.
 We allow characters to have multiple syntax types. For example, with the
-default common lisp reader, if you set-macro-character on #\\\\ it is no
+default common lisp reader, if you set-macro-character on \#\\\\ it is no
 longer a single escape, and no longer escapes in either symbols or strings.
 Using lazy-susan's tokenization and string macro-characters, a macro-character
 can still be a single escape where it's macro function is not triggered.
