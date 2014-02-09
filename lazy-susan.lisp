@@ -83,14 +83,14 @@
 
 (defun rt (&optional (rt (load-time-value (copy-readtable nil))))
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
-  This sets non-whitespace, non-macro characters with code point 0 to 126
-  to be the lazy-susan's token-reader. Better solutions solicited.
-  It also installs our string and uninterned symbol readers which use our
+  This sets non-whitespace, non-macro, visible ASCII characters to be
+  the lazy-susan's token-reader. Better solutions solicited.  It also
+  installs our string and uninterned symbol readers which use our
   single-escapes as escapes and our rational reader which allows
   digit-separators in #B, #O, #X, and #R read numbers."
   (prog1 (setq rt (copy-readtable rt))
-    (loop for i from 0 to 126
-          for char = (code-char i)
+    (loop for char across ;; visible ASCII
+          "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
           unless (or (get-macro-character char rt)
                      (whitespacep char)) do
           (set-macro-character char #'token-reader t rt))

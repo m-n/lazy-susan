@@ -34,11 +34,11 @@ LAZY-SUSAN achieves this by implementing the part of the reader
 algorithm that is used when collecting a token. To hijack CL's
 readtable (rt) machinery we have to use a rt in which our TOKEN-READER
 read macro has been set as the macro function for every character that
-can start a symbol or number. You can get such a rt -- for ascii
-characters on lisps that use a superset of ascii -- by calling
-(LS:RT). (LS:RT) also sets doublequote and \#: macro characters so they
-can use our idea of a single escape, and a macro function for \#B, \#O,
-\#X, \#R so that they can use digit separators.
+can start a symbol or number. You can get such a rt -- for visible
+ascii characters -- by calling (LS:RT). (LS:RT) also sets doublequote
+and \#: macro characters so they can use our idea of a single escape,
+and a macro function for \#B, \#O, \#X, \#R so that they can use digit
+separators.
 
 Example: Traits
 ---------------
