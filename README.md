@@ -35,10 +35,10 @@ algorithm that is used when collecting a token. To hijack CL's
 readtable (rt) machinery we have to use a rt in which our TOKEN-READER
 read macro has been set as the macro function for every character that
 can start a symbol or number. You can get such a rt -- for visible
-ascii characters -- by calling (LS:RT). (LS:RT) also sets doublequote
-and \#: macro characters so they can use our idea of a single escape,
-and a macro function for \#B, \#O, \#X, \#R so that they can use digit
-separators.
+ascii characters except period and backslash -- by calling
+(LS:RT). (LS:RT) also sets doublequote and \#: macro characters so
+they can use our idea of a single escape, and a macro function for
+\#B, \#O, \#X, \#R so that they can use digit separators.
 
 Example: Traits
 ---------------
@@ -111,8 +111,9 @@ The package local nicknames only work for reading symbols, not for
 CL:FIND-PACKAGE, CL:PACKAGE-NICKNAMES, and friends.
 
 We have to set the macro function of every character that can start a
-token to the LS:TOKEN-READER function to make a LAZY-SUSAN rt.
-This could be heavyweight if we wanted to allow non-ascii tokens.
+token to the LS:TOKEN-READER function to make a LAZY-SUSAN rt.  This
+could be heavyweight if we wanted to allow all non-ascii characters to
+start tokens.
 
 We don't change printing behavior at all. This can cause print read
 inconsistency of strings and symbols if the escape characters are
@@ -128,8 +129,9 @@ We have so far ignored "potential numbers".
 Deliberate Differences
 ----------------------
 
-By default a token ending in a package marker will read the next form
-with \*PACKAGE\* bound to the package designated by the token.
+By default a when LS reads a token ending in a package marker it will
+read the next form with \*PACKAGE\* bound to the package designated by
+the token.
 
 Using the default common lisp tokenization, characters can only have one
 syntax type, and both macro-character and single-escape are syntax types.
