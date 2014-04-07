@@ -3,6 +3,14 @@
 
 (in-package #:lazy-susan)
 
+(defun copy-readtable (&optional (from *readtable*) to)
+  "Like cl's copy readtable but in Clozure Common Lisp interprets a
+nil from argument as an rt which has ccl's system reader macros (like
+#_)."
+  #+ccl
+  (unless from (setq from ccl::%initial-readtable%))
+  (cl:copy-readtable from to))
+
 (defmacro with-gensyms ((&rest names) &body body)
   `(let ,(loop for n in names collect
                `(,n (gensym ,(concatenate 'string (symbol-name n) "-"))))

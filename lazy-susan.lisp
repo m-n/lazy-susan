@@ -88,7 +88,8 @@
   token-reader. Better solutions solicited.  It also installs our
   string and uninterned symbol readers which use our single-escapes as
   escapes and our rational reader which allows digit-separators in #B,
-  #O, #X, and #R read numbers."
+  #O, #X, and #R read numbers. The default base rt on Clozure Common
+  Lisp includes CCL's default reader macros."
   (prog1 (setq rt (copy-readtable rt))
     (loop for char across
           ;; visible ASCII, less dot and backslash. The dot interacted

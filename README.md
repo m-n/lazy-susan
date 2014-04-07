@@ -38,7 +38,9 @@ can start a symbol or number. You can get such a rt -- for visible
 ascii characters except period and backslash -- by calling
 (LS:RT). (LS:RT) also sets doublequote and \#: macro characters so
 they can use our idea of a single escape, and a macro function for
-\#B, \#O, \#X, \#R so that they can use digit separators.
+\#B, \#O, \#X, \#R so that they can use digit separators. By Default
+Clozure Common Lisp's default reader macros are active in readtables
+returned by (LS:RT).
 
 Example: Traits
 ---------------

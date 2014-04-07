@@ -3,6 +3,7 @@
 (defpackage #:lazy-susan
   (:nicknames #:ls)
   (:use #:cl)
+  (:shadow :copy-readtable)
   (:export
    ;; Package Local Nicknames (interface burgled from SBCL)
    #:add-package-local-nickname
