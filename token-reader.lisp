@@ -257,7 +257,7 @@ escaped characters.."
   (:method (i c escaped-indices (direction (eql :downcase)))
     (if (member i escaped-indices) c (char-downcase c)))
   (:method (i c escaped-indices (direction (eql :preserve)))
-    (declare (ignore i))
+    (declare (ignore i escaped-indices))
     c))
 
 (defun convert-direction (string escaped-indices)

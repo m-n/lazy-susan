@@ -65,7 +65,7 @@ Example: Package Local Nickname
 
     (in-package #:example)
 
-    (ls:package-local-nickname re cl-ppcre)
+    (ls:add-package-local-nickname re cl-ppcre)
 
     (setf (ls:package-rt 'example) (ls:rt))
 
@@ -149,7 +149,7 @@ Package Local Nicknames
 
 Interface burgled or adapted from SBCL
 
-    PACKAGE-LOCAL-NICKNAME:  Add a package local nickname at eval-always time.
+    ADD-PACKAGE-LOCAL-NICKNAME:  Add a package local nickname at eval-always time.
     PACKAGE-LOCAL-NICKNAMES: Return the package local nicknames of this package as ((nn . long-name) ...)
     REMOVE-PACKAGE-LOCAL-NICKNAME:     Remove a package local nickname at eval-always time.
 

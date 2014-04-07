@@ -10,7 +10,7 @@
 ;;; Inspired by or borrowed from sbcl's api
 (defvar *package-translations* (make-hash-table))
 
-(defmacro package-local-nickname
+(defmacro add-package-local-nickname
     (local-nickname actual-package &optional (package *package*))
   "Add a package local nickname at eval-always time."
   `(eval-always

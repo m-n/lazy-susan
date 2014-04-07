@@ -95,14 +95,14 @@
   (string= (rtfs "#:f\\oo") "FoO")
   (null (symbol-package (rtfs "#:foo"))))
 
-(package-local-nickname :lazy-susan-test-cl :cl)
+(add-package-local-nickname :lazy-susan-test-cl :cl)
 
 (deftest local-nickname-added
   (symbolp (rtfs "lazy-susan-test-cl:pi"))
   (eq (rtfs "lazy-susan-test-cl:pi") (rtfs "cl:pi"))
   (not (find-package :lazy-susan-test-cl)))
 
-(package-local-nickname :lazy-susan-test-cl2 :cl)
+(add-package-local-nickname :lazy-susan-test-cl2 :cl)
 (remove-package-local-nickname :lazy-susan-test-cl2)
 
 (deftest local-nickname-removable

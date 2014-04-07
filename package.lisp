@@ -5,7 +5,7 @@
   (:use #:cl)
   (:export
    ;; Package Local Nicknames (interface burgled from SBCL)
-   #:package-local-nickname
+   #:add-package-local-nickname
    #:remove-package-local-nickname
    #:package-local-nicknames
 
