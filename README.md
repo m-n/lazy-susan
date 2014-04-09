@@ -157,7 +157,7 @@ Interface burgled or adapted from SBCL
 
 Synonym Symbols
 ---------------
-    SYNONYM-SYMBOL:     Set the symbol to read as another symbol at eval-always time.
+    ADD-SYNONYM-SYMBOL:     Set the symbol to read as another symbol at eval-always time.
     CLEAR-SYNONYM-SYMBOLS:   Remove symbol translations from package at eval-always time.
 
 Readtables

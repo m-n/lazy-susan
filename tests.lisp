@@ -108,9 +108,9 @@
 (deftest local-nickname-removable
   (signals-a error (rtfs "lazy-susan-test-cl2::package-should-not-be-found")))
 
-(synonym-symbol foo baz)
+(add-synonym-symbol foo baz)
 
-(synonym-symbol bar cons)
+(add-synonym-symbol bar cons)
 
 (deftest synonym-symbol-works
   (symbolp (rtfs "foo"))

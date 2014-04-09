@@ -49,7 +49,7 @@
 
 (defvar *synonym-translations* (make-hash-table))
 
-(defmacro synonym-symbol (synonym-symbol canonical-symbol
+(defmacro add-synonym-symbol (synonym-symbol canonical-symbol
                           &optional (here *package*))
   "Set the symbol to read as another symbol at eval-always time.
   This setting is package-local."

@@ -11,7 +11,7 @@
    #:package-local-nicknames
 
    ;; Synonym Symbols
-   #:synonym-symbol
+   #:add-synonym-symbol
    #:clear-synonym-symbols
 
    ;; Constituent traits and Syntax Types
