@@ -108,6 +108,24 @@
 (deftest local-nickname-removable
   (signals-a error (rtfs "lazy-susan-test-cl2::package-should-not-be-found")))
 
+(add-symbol-package-marker 'tester :cl)
+
+(deftest symbol-package-marker-added
+  (unwind-protect
+       (progn (setf (package-resolution-strategy *rt*) 'spm)
+              (eq (symbol-package (rtfs "tester:defun"))
+                  (find-package "CL")))
+    (setf (package-resolution-strategy *rt*) 'package-local)))
+
+(add-symbol-package-marker 'tester2 :cl)
+(remove-symbol-package-marker 'tester2)
+
+(deftest symbol-package-marker-removable
+  (unwind-protect
+       (progn (setf (package-resolution-strategy *rt*) 'spm)
+              (signals-a package-error (rtfs "tester2:defun")))
+    (setf (package-resolution-strategy *rt*) 'package-local)))
+
 (add-synonym-symbol foo baz)
 
 (add-synonym-symbol bar cons)

@@ -5,10 +5,20 @@
   (:use #:cl)
   (:shadow :copy-readtable)
   (:export
+
+   ;; Custom package resolutions
+   #:resolve-package-string
+   #:package-resolution-strategy
    ;; Package Local Nicknames (interface burgled from SBCL)
+   #:package-local
    #:add-package-local-nickname
    #:remove-package-local-nickname
    #:package-local-nicknames
+   ;; SPM, an alternative to Package-Local-Nicknames
+   #:spm
+   #:add-symbol-package-marker
+   #:remove-symbol-package-marker
+   #:package-symbol-markers
 
    ;; Synonym Symbols
    #:add-synonym-symbol

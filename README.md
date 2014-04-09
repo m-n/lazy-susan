@@ -17,13 +17,14 @@ For fun and eduction, and to make the following easy
 to use:
 
 1. Package local nicknames
-2. Synonym symbols.
-3. Redefinition of constituent traits
+2. Symbol Package Markers (an alternative to local nicknames)
+3. Synonym symbols.
+4. Redefinition of constituent traits
    (e.g. treat \#\\: as something other than a package separator.)
-4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
+5. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
-5. Customizable treatment of tokens ending in a package marker, allowing
+6. Customizable treatment of tokens ending in a package marker, allowing
    the user to select one of three options:
    * foo:(bar baz) reads (bar baz) with \*package\* bound to the package designated by foo.
      This is the default behavior of an (LS:RT).
@@ -44,6 +45,7 @@ returned by (LS:RT).
 
 Example: Traits
 ---------------
+
     (defvar *my-rt* (ls:rt))
 
     (setf (digit-separators *my-rt*) '(#\_))
@@ -60,6 +62,7 @@ Example: Traits
 
 Example: Package Local Nickname
 -------------------------------
+
     ;;;; package.lisp
 
     (defpackage #:example
@@ -84,6 +87,45 @@ removed, except that SLIME uses it to determine a buffer's
 package. The behavior of SLIME-COMPILE-DEFUN is very confusing when SLIME
 incorrectly determines a buffers package, and so we are currently
 rethinking this part of LS's interface.
+
+Example: Symbol Package Marker
+------------------------------
+
+Symbol package markers are an alternative to package local
+nicknames. This is inspired by Jasom's SPM project
+(https://github.com/jasom/spm-reader), and his idea to read the
+package marker as a symbol, and to resolve that package through that
+symbol. Unlike Jasom's, LAZY-SUSAN's SPM does not change the syntax of
+symbols. Instead, after finding the package marker string it searches
+for a symbol with that name accessible in the current package. It
+checks to see if there is a package associated with the symbol and
+uses that, defaulting to the package with the same name as the string.
+
+This allows us to import package nicknames by importing symbols.
+
+    ;;;; package.lisp
+
+    (defpackage #:example
+      (:use #:cl))
+
+    (in-package #:example)
+
+    (eval-when (:compile-toplevel :load-toplevel :execute)
+      (setq *readtable* (ls:rt)))
+
+    (setf (ls:package-rt 'example) *readtable*)
+
+    (setf (ls:package-resolution-strategy *readtable*) 'ls:spm)
+
+    (ls:add-symbol-package-marker 're 'cl-ppcre)
+
+    ;;;; example.lisp
+
+    (in-package #:example)
+
+    (ls:in-package/rt #:example)
+
+    (re:scan-to-strings "(\\w+)" "abc def")
 
 Example: Trailing package marker
 --------------------------------
@@ -155,6 +197,28 @@ Interface burgled or adapted from SBCL
     PACKAGE-LOCAL-NICKNAMES: Return the package local nicknames of this package as ((nn . long-name) ...)
     REMOVE-PACKAGE-LOCAL-NICKNAME:     Remove a package local nickname at eval-always time.
 
+Symbol Package Markers
+----------------------
+
+    ADD-SYMBOL-PACKAGE-MARKER:    Add a reference from symbol to package for use while reading symbols.
+    REMOVEX-SYMBOL-PACKAGE-MARKER:     Remove the reference from symbol to any packages.
+    PACKAGE-SYMBOL-MARKERS:  Return a list of the symbols which refer to package.
+
+Custom Package Name Resolution
+------------------------------
+
+RESOLVE-PACKAGE-STRING and PACKAGE-RESOLUTION-STRATEGY allow creating custom
+package resolution schemes. RESOLVE-PACKAGE-STRING takes string read
+in a package portion of a symbol and returns the name of a package. It
+is a generic function which has an argument which dispatches on
+(PACKAGE-RESOLUTION-STRATEGY *READTABLE*) {which is setfable}. This is the
+mechanism used to implement SPM and Package Local Nicknames and the
+user is invited to make their own methods with an eql specializer on
+the "strategy" argument.
+
+    RESOLVE-PACKAGE-STRING:  Translate a case converted package string to the name of a package.
+    PACKAGE-RESOLUTION-STRATEGY: The way to resolve packages when reading symbols.
+
 Synonym Symbols
 ---------------
     ADD-SYNONYM-SYMBOL:     Set the symbol to read as another symbol at eval-always time.
@@ -162,6 +226,7 @@ Synonym Symbols
 
 Readtables
 ----------
+
     RT:                 Return copy of ReadTable with lazy-susan features enabled. ASCII only.
     TOKEN-READER:       The reader function used to tokenize a symbol or a number.
     COLLECT-TOKEN:      Collects the next token as (values package-token name-token saw-escape-p package-markers-seen)
@@ -171,6 +236,7 @@ Readtables
 
 Syntax Setfs
 ------------
+
     DECIMAL-POINTS:     Within readtable, represent trait by characters.
     DIGIT-SEPARATORS:   Within readtable, represent trait by characters.
     EXPONENT-MARKERS:   Within readtable, represent trait by characters.

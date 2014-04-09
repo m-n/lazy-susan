@@ -6,8 +6,33 @@
 
 (in-package #:lazy-susan)
 
-;;;; Package Local Nicknames
+;;;; Package Translations
+
+(defgeneric resolve-package-string (package-string-or-nil package rt strategy)
+  (:documentation
+   "Translate a case converted package string to the name of a package.
+
+The given package string is either nil or already case-converted, and,
+if an empty string, translated to \"KEYWORD\". The strategy argument
+is the current readtables package-resolution-strategy. To create a
+custom package resolution strategy, created a method on this function
+specializing on the strategy, and
+use (setf (package-resolution-strategy your-readtable)
+your-strategy)."))
+
+(defmethod resolve-package-string ((str t)
+                                   (pack t)
+                                   (rt t)
+                                   strategy)
+  (restart-case
+      (error "No method exists on resolve-package-string for strategy ~A" strategy)
+    (set-default-strategy ()
+      (resolve-package-string str pack rt (setf (package-resolution-strategy rt)
+                                                'ls:package-local)))))
+
+;;; Package Local Nicknames
 ;;; Inspired by or borrowed from sbcl's api
+
 (defvar *package-translations* (make-hash-table))
 
 (defmacro add-package-local-nickname
@@ -37,13 +62,57 @@
                                (gethash here *package-translations*)
                                :key 'cdr)))
 
-(defun global-package (local-package-string &optional (package *package*))
+(defmethod resolve-package-string
+    (local-package-string package (rt t) (strategy (eql 'ls:package-local)))
   ;; when guards against confusing nil and "NIL"
   (when local-package-string
     (or (cdr (assoc local-package-string
                     (gethash package *package-translations*)
                     :test 'string=))
         local-package-string)))
+
+;;; SPM: Symbol Package Markers
+
+(defvar *package-symbol-translations* (make-hash-table)
+  "HT mapping symbols to package names")
+
+(defmacro add-symbol-package-marker (symbol package)
+  "Add a reference from symbol to package for use while reading symbols.
+
+  Exectured at eval-always time."
+  `(eval-always
+     (setf (gethash ,symbol *package-symbol-translations*)
+           (package-string ,package))))
+
+(defmacro remove-symbol-package-marker (symbol)
+  "Remove the reference from symbol to any packages.
+
+  Executed at eval-always time."
+  `(eval-always (remhash ,symbol *package-symbol-translations*)))
+
+(defun package-symbol-markers (package)
+  "Return a list of the symbols which refer to package."
+  (setq package (package-string package))
+  (let (result)
+    (maphash (lambda (k v)
+               (when (string= package v)
+                 (push k result)))
+             *package-symbol-translations*)
+    result))
+
+(defmethod resolve-package-string (package-string
+                                   package
+                                   (rt t)
+                                   (strategy (eql 'ls:spm)))
+  (when package-string
+    (multiple-value-bind (sym foundp) (find-symbol package-string
+                                                   package)
+      ;; foundp differentiates between finding no symbol and finding cl:nil
+      (if foundp
+          (gethash sym
+                   *package-symbol-translations*
+                   package-string)
+          package-string))))
 
 ;;;; Synonym Symbols
 

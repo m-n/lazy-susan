@@ -94,7 +94,7 @@
 (defvar *trailing-package-marker* (make-hash-table :test #'eq))
 
 (defun trailing-package-marker (rt)
-  (gethash rt *trailing-package-marker* :read-form-in-package))
+  (gethash rt *trailing-package-marker* :read-form-in-package)) ;
 
 (defsetf trailing-package-marker (rt) (behavior)
   "The behavior of the readtable when finding a trailing package marker.
@@ -106,4 +106,22 @@
                             e.g. foo:(bar) reads with *package* bound
                             to foo. foo::(bar) has identical meaning.
    CL:NIL -> Error"
-  `(setf (gethash ,rt *trailing-package-marker*) ,behavior))
+  `(progn (assert (member ,behavior '(() :keyword :read-form-in-package)))
+     (setf (gethash ,rt *trailing-package-marker*) ,behavior)))
+
+(defvar *package-resolution-strategy* (make-hash-table :test #'eq))
+
+(defun package-resolution-strategy (rt)
+  (gethash rt *package-resolution-strategy* 'ls:package-local))
+
+(defsetf package-resolution-strategy (rt) (behavior)
+  "The way to resolve packages when reading symbols.
+
+Two values have predefined behavior:
+
+    LS:SPM -> Use the symbol package marker system
+    LS:PACKAGE-LOCAL -> Use the package local nicknames system
+
+The RT's package resolution strategy is passed as an argument to the
+generic function LS:RESOLVE-PACKAGE-MARKER. To make a custom package-resolution behavior Define a primary method on that generic function eql specializing to your strategy. "
+  `(setf (gethash ,rt *package-resolution-strategy*) ,behavior))

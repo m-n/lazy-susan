@@ -291,7 +291,9 @@ escaped characters.."
   (or (and package-string
            (= (length package-string) 0)
            "KEYWORD")
-      (global-package package-string)
+      (resolve-package-string
+       package-string package *readtable* (package-resolution-strategy
+                                           *readtable*))
       (package-name package)))
 
 ;;;; Conditions
