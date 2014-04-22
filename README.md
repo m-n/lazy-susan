@@ -16,15 +16,14 @@ Why?
 For fun and eduction, and to make the following easy
 to use:
 
-1. Package local nicknames
-2. Symbol Package Markers (an alternative to local nicknames)
-3. Synonym symbols.
-4. Redefinition of constituent traits
+1. Custom methods of resolving a symbol's package, including Package Local Nicknames
+2. Synonym symbols.
+3. Redefinition of constituent traits
    (e.g. treat \#\\: as something other than a package separator.)
-5. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
+4. Introduction of a new constituent trait: the DIGIT-SEPARATOR can be
    included in arbitrary places within a number without changing how
    the number is read.
-6. Customizable treatment of tokens ending in a package marker, allowing
+5. Customizable treatment of tokens ending in a package marker, allowing
    the user to select one of three options:
    * foo:(bar baz) reads (bar baz) with \*package\* bound to the package designated by foo.
      This is the default behavior of an (LS:RT).
@@ -194,8 +193,9 @@ Package Local Nicknames
 Interface burgled or adapted from SBCL
 
     ADD-PACKAGE-LOCAL-NICKNAME:  Add a package local nickname at eval-always time.
-    PACKAGE-LOCAL-NICKNAMES: Return the package local nicknames of this package as ((nn . long-name) ...)
     REMOVE-PACKAGE-LOCAL-NICKNAME:     Remove a package local nickname at eval-always time.
+    PACKAGE-LOCAL-NICKNAMES: Return the package local nicknames of this package as ((nn . long-name) ...)
+    PACKAGE-LOCAL: The PACKAGE-RESOLUTION-STRATEGY which enables package local nicknames
 
 Symbol Package Markers
 ----------------------
@@ -203,18 +203,29 @@ Symbol Package Markers
     ADD-SYMBOL-PACKAGE-MARKER:    Add a reference from symbol to package for use while reading symbols.
     REMOVEX-SYMBOL-PACKAGE-MARKER:     Remove the reference from symbol to any packages.
     PACKAGE-SYMBOL-MARKERS:  Return a list of the symbols which refer to package.
+    SPM:   The PACKAGE-RESOLUTION-STRATEGY which enables symbol package markers
+
+RT Local Nicknames
+------------------
+
+    ADD-RT-PACKAGE-TRANSLATION:   Add a readtable local package translation. Like a nickname, but
+    REMOVE-RT-PACKAGE-TRANSLATION:     Remove the readtable local package translation.
+    RT-PACKAGE-TRANSLATIONS: Return an alist mapping the package translation names to their real names.
+    RT-LOCAL: The PACKAGE-RESOLUTION-STRATEGY which enables rt local nicknames
+
 
 Custom Package Name Resolution
 ------------------------------
 
-RESOLVE-PACKAGE-STRING and PACKAGE-RESOLUTION-STRATEGY allow creating custom
-package resolution schemes. RESOLVE-PACKAGE-STRING takes string read
-in a package portion of a symbol and returns the name of a package. It
-is a generic function which has an argument which dispatches on
-(PACKAGE-RESOLUTION-STRATEGY *READTABLE*) {which is setfable}. This is the
-mechanism used to implement SPM and Package Local Nicknames and the
-user is invited to make their own methods with an eql specializer on
-the "strategy" argument.
+RESOLVE-PACKAGE-STRING and PACKAGE-RESOLUTION-STRATEGY allow creating
+custom package resolution schemes. RESOLVE-PACKAGE-STRING takes the
+string read in the package portion of a symbol and returns the name of
+a package. It is a generic function which has an argument which
+dispatches on (PACKAGE-RESOLUTION-STRATEGY *READTABLE*) {which is
+setfable}. This is the mechanism used to implement Package Local
+Nicknames, SPM, and RT Local Nicknames. The user is invited to
+make their own methods with an eql specializer on the "strategy"
+argument.
 
     RESOLVE-PACKAGE-STRING:  Translate a case converted package string to the name of a package.
     PACKAGE-RESOLUTION-STRATEGY: The way to resolve packages when reading symbols.

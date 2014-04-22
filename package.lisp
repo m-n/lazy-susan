@@ -19,6 +19,12 @@
    #:add-symbol-package-marker
    #:remove-symbol-package-marker
    #:package-symbol-markers
+   ;; rt-local nicknames, another alternative to package-local
+   #:rt-local
+   #:add-rt-package-translation
+   #:remove-rt-package-translation
+   #:rt-package-translations
+
 
    ;; Synonym Symbols
    #:add-synonym-symbol

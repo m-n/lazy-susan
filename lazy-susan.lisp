@@ -114,6 +114,48 @@ your-strategy)."))
                    package-string)
           package-string))))
 
+;;; Readtable Local package markers
+
+(defvar *rt-package-translations* (make-hash-table)
+  "HT mapping readtables to alists. The alists map nickname like names
+  to the package name they refer to.")
+
+(defmacro add-rt-package-translation (nickname package &optional (rt
+                                                                  *readtable*))
+  "Add a readtable local package translation. (Like a nickname, but
+only active for reading symbols.)"
+  `(eval-always
+     (assocf ,nickname
+             (package-string ,package)
+             (gethash ,rt *rt-package-translations*)
+             :test #'string=)))
+
+(defmacro remove-rt-package-translation (nickname &optional (rt *readtable*))
+  "Remove the readtable local package translation."
+  (with-gensyms (grt gnickname)
+    `(eval-always
+       (let ((,gnickname ,nickname)
+             (,grt ,rt))
+         (setf (gethash ,grt *rt-package-translations*)
+               (remove ,gnickname
+                       (gethash ,grt *rt-package-translations*)
+                       :test #'string=
+                       :key #'car))))))
+
+(defun rt-package-translations (&optional (rt *readtable*))
+  "Return an alist mapping the package translation names to their real names."
+  (gethash rt *rt-package-translations*))
+
+(defmethod resolve-package-string (package-string
+                                   (package t)
+                                   rt
+                                   (strategy (eql 'ls:rt-local)))
+  (when package-string
+    (or (cdr (assoc package-string
+                    (gethash rt *rt-package-translations*)
+                    :test 'string=))
+        package-string)))
+
 ;;;; Synonym Symbols
 
 (defvar *synonym-translations* (make-hash-table))

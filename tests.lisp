@@ -126,6 +126,24 @@
               (signals-a package-error (rtfs "tester2:defun")))
     (setf (package-resolution-strategy *rt*) 'package-local)))
 
+(add-rt-package-translation "RTL" :cl *rt*)
+
+(deftest rt-package-translation-addable
+  (unwind-protect
+       (progn (setf (package-resolution-strategy *rt*) 'rt-local)
+              (eq (symbol-package (rtfs "rtl:defun"))
+                  (find-package "CL")))
+    (setf (package-resolution-strategy *rt*) 'package-local)))
+
+(add-rt-package-translation "RTL-REM" :cl *rt*)
+(remove-rt-package-translation "RTL-REM" *rt*)
+
+(deftest rt-package-translation-removable
+  (unwind-protect
+       (progn (setf (package-resolution-strategy *rt*) 'rt-local)
+              (signals-a package-error (rtfs "rtl-rem:defun")))
+    (setf (package-resolution-strategy *rt*) 'packae-local)))
+
 (add-synonym-symbol foo baz)
 
 (add-synonym-symbol bar cons)
