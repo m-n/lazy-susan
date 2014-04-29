@@ -6,11 +6,10 @@
 (in-package #:lazy-susan-test)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (setq *readtable* (copy-readtable ())))
+  (setq *readtable* (copy-readtable ()))
+  (defparameter *rt* (rt)))
 
 (defvar *tests* ())
-
-(defparameter *rt* (rt))
 
 (defun run-tests ()
   (let (failing-tests)
@@ -112,37 +111,37 @@
 
 (deftest symbol-package-marker-added
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'spm)
+       (progn (setf (package-resolution-strategy *rt*) 'ls:spm)
               (eq (symbol-package (rtfs "tester:defun"))
                   (find-package "CL")))
-    (setf (package-resolution-strategy *rt*) 'package-local)))
+    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
 
 (add-symbol-package-marker 'tester2 :cl)
 (remove-symbol-package-marker 'tester2)
 
 (deftest symbol-package-marker-removable
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'spm)
+       (progn (setf (package-resolution-strategy *rt*) 'ls:spm)
               (signals-a package-error (rtfs "tester2:defun")))
-    (setf (package-resolution-strategy *rt*) 'package-local)))
+    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
 
 (add-rt-package-translation "RTL" :cl *rt*)
 
 (deftest rt-package-translation-addable
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'rt-local)
+       (progn (setf (package-resolution-strategy *rt*) 'ls:rt-local)
               (eq (symbol-package (rtfs "rtl:defun"))
                   (find-package "CL")))
-    (setf (package-resolution-strategy *rt*) 'package-local)))
+    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
 
 (add-rt-package-translation "RTL-REM" :cl *rt*)
 (remove-rt-package-translation "RTL-REM" *rt*)
 
 (deftest rt-package-translation-removable
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'rt-local)
+       (progn (setf (package-resolution-strategy *rt*) 'ls:rt-local)
               (signals-a package-error (rtfs "rtl-rem:defun")))
-    (setf (package-resolution-strategy *rt*) 'packae-local)))
+    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
 
 (add-synonym-symbol foo baz)
 
