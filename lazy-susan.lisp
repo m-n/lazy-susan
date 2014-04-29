@@ -192,25 +192,30 @@ only active for reading symbols.)"
 
 ;;;; A Readtable
 
+(defvar +cp+ '#:close-paren)
+
 (defun rt (&optional (rt (load-time-value (copy-readtable nil))))
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
   This sets non-whitespace, non-macro, visible ASCII characters
-  excepting dot and backslash, to be the lazy-susan's
-  token-reader. Better solutions solicited.  It also installs our
-  string and uninterned symbol readers which use our single-escapes as
-  escapes and our rational reader which allows digit-separators in #B,
-  #O, #X, and #R read numbers. The default base rt on Clozure Common
-  Lisp includes CCL's default reader macros."
+  excepting backslash, to be the lazy-susan's token-reader. Better
+  solutions solicited.  It also installs our string and uninterned
+  symbol readers which use our single-escapes as escapes; our rational
+  reader which allows digit-separators in #B, #O, #X, and #R read
+  numbers; and our open and close parenthesis readers which allow us
+  to start tokens with a period without interfering with CCL's
+  consing dot. The default base rt on Clozure Common Lisp includes
+  CCL's default reader macros."
   (prog1 (setq rt (copy-readtable rt))
     (loop for char across
-          ;; visible ASCII, less dot and backslash. The dot interacted
-          ;; poorly with ccl's consing dot, and the backslash
-          ;; interacted poorly with ccl (1.9)'s character literals.
-          "!\"#$%&'()*+,-/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+          ;; visible ASCII, less backslash. It interacted poorly with
+          ;; CCL (1.9)'s character literals.
+          "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
           unless (or (get-macro-character char rt)
                      (whitespacep char)) do
           (set-macro-character char #'token-reader t rt))
     (set-macro-character #\" #'string-reader () rt)
+    (set-macro-character #\( #'list-reader () rt)
+    (set-macro-character #\) (constantly +cp+) () rt)
     (set-dispatch-macro-character #\# #\: #'uninterned-symbol-reader rt)
     (set-dispatch-macro-character #\# #\b #'rational-reader rt)
     (set-dispatch-macro-character #\# #\o #'rational-reader rt)
@@ -259,6 +264,70 @@ only active for reading symbols.)"
     (when (or count (plusp package-markers-seen))
       (error 'reader-error :stream stream))
     (make-symbol name-token)))
+
+(defstruct (tconc (:type list)
+                  (:constructor make-tconc
+                                (list &aux (tail (last list)))))
+  list
+  tail)
+
+(defun tconc-enqueue (item tconc)
+  (setf (tconc-tail tconc)
+        (setf (cdr (tconc-tail tconc)) item)))
+
+(defun list-reader (stream char &optional count)
+  (declare (ignore char count))
+  (let (tconc)
+    (labels ((peek-nonwhite ()
+               (do ((char (peek-char () stream t) (peek-char () stream t)))
+                   ((not (whitespacep char))
+                    char)
+                 (read-char stream t t t)))
+             (start ()
+               (let ((char (peek-nonwhite)))
+                 (case char
+                   (#\. (read-char stream)
+                        (let ((next (peek-char () stream t t t)))
+                          (cond ((whitespacep next)
+                                 (error "Incorrect dot context"))
+                                (t
+                                 (unread-char char stream)
+                                 (setq tconc (make-tconc
+                                              (list (read-one t))))
+                                 #'more))))
+                   (#\) (read-char stream t t t)
+                        (return-from list-reader ()))
+                   (t (setq tconc (make-tconc (list (read-one ()))))
+                      #'more))))
+             (more ()
+               (let ((char (peek-nonwhite)))
+                 (case char
+                   (#\. (read-char stream)
+                        (let ((next (peek-char () stream t t t)))
+                          (cond ((whitespacep next)
+                                 (tconc-enqueue (read-one t) tconc)
+                                 (assert (eq (read stream t t t) +cp+))
+                                 (return-from list-reader
+                                   (tconc-list tconc)))
+                                (t
+                                 (unread-char char stream)
+                                 (tconc-enqueue
+                                  (list (read-one ())) tconc)
+                                 #'more))))
+                   (#\) (read-char stream t t t)
+                        (return-from list-reader (tconc-list tconc)))
+                   (t (tconc-enqueue (list (read-one ())) tconc)
+                      #'more))))
+             (read-one (form-required)
+               (let ((form (read stream t t t)))
+                 (if (eq form +cp+)
+                     (if form-required
+                         (error "Incorrect dot context")
+                         (return-from list-reader
+                           (when tconc (tconc-list tconc))))
+                     form))))
+      (loop with state = #'start
+            do (setf state (funcall state))))))
 
 ;;;; Convenient way to use a rt
 

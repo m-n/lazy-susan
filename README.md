@@ -35,12 +35,14 @@ algorithm that is used when collecting a token. To hijack CL's
 readtable (rt) machinery we have to use a rt in which our TOKEN-READER
 read macro has been set as the macro function for every character that
 can start a symbol or number. You can get such a rt -- for visible
-ascii characters except period and backslash -- by calling
-(LS:RT). (LS:RT) also sets doublequote and \#: macro characters so
-they can use our idea of a single escape, and a macro function for
-\#B, \#O, \#X, \#R so that they can use digit separators. By Default
-Clozure Common Lisp's default reader macros are active in readtables
-returned by (LS:RT).
+ascii characters and backslash -- by calling (LS:RT). (LS:RT) sets
+doublequote and \#: macro characters so they can use our idea of a
+single escape, and a macro function for \#B, \#O, \#X, \#R so that
+they can use digit separators. It also sets it's own open and close
+paren reader macros -- this was necessary to allow our custom symbols
+to start with #\. without interfering with the consing dot in CCL. By
+Default Clozure Common Lisp's default reader macros are active in
+readtables returned by (LS:RT).
 
 Example: Traits
 ---------------
