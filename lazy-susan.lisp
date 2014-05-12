@@ -192,8 +192,6 @@ only active for reading symbols.)"
 
 ;;;; A Readtable
 
-(defvar +cp+ '#:close-paren)
-
 (defun rt (&optional (rt (load-time-value (copy-readtable nil))))
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
   This sets non-whitespace, non-macro, visible ASCII characters
@@ -215,7 +213,7 @@ only active for reading symbols.)"
           (set-macro-character char #'token-reader t rt))
     (set-macro-character #\" #'string-reader () rt)
     (set-macro-character #\( #'list-reader () rt)
-    (set-macro-character #\) (constantly +cp+) () rt)
+    (set-macro-character #\) #'close-paren-reader () rt)
     (set-dispatch-macro-character #\# #\: #'uninterned-symbol-reader rt)
     (set-dispatch-macro-character #\# #\b #'rational-reader rt)
     (set-dispatch-macro-character #\# #\o #'rational-reader rt)
@@ -326,8 +324,23 @@ only active for reading symbols.)"
                          (return-from list-reader
                            (when tconc (tconc-list tconc))))
                      form))))
-      (loop with state = #'start
-            do (setf state (funcall state))))))
+      (catch 'list-reader
+        (loop with state = #'start
+              do (setf state (funcall state)))))))
+
+(defvar +cp+ '#:close-paren)
+
+(defun close-paren-reader (stream char)
+  (declare (ignore char stream))
+  (if *read-suppress*
+      ;; The close-paren-reader is required because a form such as
+      ;; (#+nil foo) won't return control to the list-reader between
+      ;; reading #+ and attempting to read the close paren. In a form
+      ;; like #+nil(#+nil foo), the list-reader sees nil instead of
+      ;; +CP+ as the value of the close paren due to *read-suppress*,
+      ;; so we use throw/catch to finish reading the s-exp.
+      (throw 'list-reader ())
+      +cp+))
 
 ;;;; Convenient way to use a rt
 
