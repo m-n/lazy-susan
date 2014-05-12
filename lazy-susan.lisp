@@ -121,7 +121,7 @@ your-strategy)."))
   to the package name they refer to.")
 
 (defmacro add-rt-package-translation (nickname package &optional (rt
-                                                                  *readtable*))
+                                                                  '*readtable*))
   "Add a readtable local package translation. (Like a nickname, but
 only active for reading symbols.)"
   `(eval-always
@@ -130,7 +130,7 @@ only active for reading symbols.)"
              (gethash ,rt *rt-package-translations*)
              :test #'string=)))
 
-(defmacro remove-rt-package-translation (nickname &optional (rt *readtable*))
+(defmacro remove-rt-package-translation (nickname &optional (rt '*readtable*))
   "Remove the readtable local package translation."
   (with-gensyms (grt gnickname)
     `(eval-always
