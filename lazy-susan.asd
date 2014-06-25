@@ -14,11 +14,12 @@
 
 (asdf:defsystem #:lazy-susan-test
   :serial t
-  :depends-on (:lazy-susan)
+  :depends-on (:lazy-susan :yarty)
   :components ((:file tests)))
 
 (defmethod asdf:perform ((o asdf:test-op)
                          (c (eql (asdf:find-system :lazy-susan))))
   (asdf:operate 'load-op :lazy-susan-test)
   (funcall (intern (symbol-name :run-tests)
-                   (find-package :lazy-susan-test))))
+                   (find-package :yarty))
+           :lazy-susan-test))

@@ -1,5 +1,5 @@
 (defpackage #:lazy-susan-test
-  (:use #:cl #:lazy-susan)
+  (:use #:cl #:yarty)
   (:import-from #:lazy-susan
                 #:looks-like-a-number))
 
@@ -7,44 +7,13 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (setq *readtable* (copy-readtable ()))
-  (defparameter *rt* (rt)))
-
-(defvar *tests* ())
-
-(defun run-tests ()
-  (let (failing-tests)
-    (declare (special failing-tests))
-    (mapc #'funcall (reverse *tests*))
-    (print (if failing-tests
-               (cons :failed-tests failing-tests)
-               :ok))))
-
-(defmacro test-and (&body forms)
-  (let ((f (gensym)))
-    (cond ((null forms) t)
-          (t `(let (,f)
-                (declare (special current-test failing-tests))
-                (unwind-protect (setq ,f ,(car forms))
-                  (when  (not ,f)
-                    (progn (format t "~&  Failing Form ~S" ',(car forms))
-                           (push current-test failing-tests))))
-                (test-and ,@(cdr forms)))))))
-
-(defmacro deftest (name &body body)
-  `(progn (pushnew ',name *tests*)
-          (defun ,name ()
-            (let ((current-test ',name))
-              (declare (special current-test failing-tests))
-              (handler-case (test-and ,@body)
-                (error (c)
-                  (pushnew current-test failing-tests)
-                  (format t "Failed; threw ~S~&" c)))))))
+  (defparameter *rt* (ls:rt)))
 
 (defun sllan (s)
   (let ((*readtable* *rt*))
     (numberp (looks-like-a-number s))))
 
-(deftest it-looks-like-a-number
+(deftest/each it-looks-like-a-number
   (sllan "1")
   (sllan "1.")
   (sllan "-.1")
@@ -54,13 +23,13 @@
   (sllan "1d0")
   (sllan "1/2")
   (sllan "11/22")
-  (progn (setf (decimal-points *rt*) '(#\!))
+  (progn (setf (ls:decimal-points *rt*) '(#\!))
          (sllan "1!1"))
   (not (sllan "1.1"))
-  (progn (setf (decimal-points *rt*) '(#\.))
+  (progn (setf (ls:decimal-points *rt*) '(#\.))
          (sllan "1.1")))
 
-(deftest does-not-look-numberlike
+(deftest/each does-not-look-numberlike
   (not (sllan "1z000z000"))
   (not (sllan "a1"))
   (not (sllan "abc"))
@@ -72,11 +41,7 @@
         (*readtable* *rt*))
     (read (make-string-input-stream s) )))
 
-(defmacro signals-a (condition &body body)
-  `(handler-case (prog1 () ,@body)
-     (,condition (c) (declare (ignore c)) t)))
-
-(deftest reading-symbols
+(deftest/each reading-symbols
   (symbolp (rtfs "lazy-susan:token-reader"))
   (symbolp (rtfs "lazy-susan::new?symbol"))
   (eq (rtfs "not-imported") (rtfs "|NOT-IMPORTED|"))
@@ -94,60 +59,60 @@
   (string= (rtfs "#:f\\oo") "FoO")
   (null (symbol-package (rtfs "#:foo"))))
 
-(add-package-local-nickname :lazy-susan-test-cl :cl)
+(ls:add-package-local-nickname :lazy-susan-test-cl :cl)
 
-(deftest local-nickname-added
+(deftest/each local-nickname-added
   (symbolp (rtfs "lazy-susan-test-cl:pi"))
   (eq (rtfs "lazy-susan-test-cl:pi") (rtfs "cl:pi"))
   (not (find-package :lazy-susan-test-cl)))
 
-(add-package-local-nickname :lazy-susan-test-cl2 :cl)
-(remove-package-local-nickname :lazy-susan-test-cl2)
+(ls:add-package-local-nickname :lazy-susan-test-cl2 :cl)
+(ls:remove-package-local-nickname :lazy-susan-test-cl2)
 
-(deftest local-nickname-removable
+(deftest/each local-nickname-removable
   (signals-a error (rtfs "lazy-susan-test-cl2::package-should-not-be-found")))
 
-(add-symbol-package-marker 'tester :cl)
+(ls:add-symbol-package-marker 'tester :cl)
 
-(deftest symbol-package-marker-added
+(deftest/each symbol-package-marker-added
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'ls:spm)
+       (progn (setf (ls:package-resolution-strategy *rt*) 'ls:spm)
               (eq (symbol-package (rtfs "tester:defun"))
                   (find-package "CL")))
-    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
+    (setf (ls:package-resolution-strategy *rt*) 'ls:package-local)))
 
-(add-symbol-package-marker 'tester2 :cl)
-(remove-symbol-package-marker 'tester2)
+(ls:add-symbol-package-marker 'tester2 :cl)
+(ls:remove-symbol-package-marker 'tester2)
 
-(deftest symbol-package-marker-removable
+(deftest/each symbol-package-marker-removable
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'ls:spm)
+       (progn (setf (ls:package-resolution-strategy *rt*) 'ls:spm)
               (signals-a package-error (rtfs "tester2:defun")))
-    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
+    (setf (ls:package-resolution-strategy *rt*) 'ls:package-local)))
 
-(add-rt-package-translation "RTL" :cl *rt*)
+(ls:add-rt-package-translation "RTL" :cl *rt*)
 
-(deftest rt-package-translation-addable
+(deftest/each rt-package-translation-addable
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'ls:rt-local)
+       (progn (setf (ls:package-resolution-strategy *rt*) 'ls:rt-local)
               (eq (symbol-package (rtfs "rtl:defun"))
                   (find-package "CL")))
-    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
+    (setf (ls:package-resolution-strategy *rt*) 'ls:package-local)))
 
-(add-rt-package-translation "RTL-REM" :cl *rt*)
-(remove-rt-package-translation "RTL-REM" *rt*)
+(ls:add-rt-package-translation "RTL-REM" :cl *rt*)
+(ls:remove-rt-package-translation "RTL-REM" *rt*)
 
-(deftest rt-package-translation-removable
+(deftest/each rt-package-translation-removable
   (unwind-protect
-       (progn (setf (package-resolution-strategy *rt*) 'ls:rt-local)
+       (progn (setf (ls:package-resolution-strategy *rt*) 'ls:rt-local)
               (signals-a package-error (rtfs "rtl-rem:defun")))
-    (setf (package-resolution-strategy *rt*) 'ls:package-local)))
+    (setf (ls:package-resolution-strategy *rt*) 'ls:package-local)))
 
-(add-synonym-symbol foo baz)
+(ls:add-synonym-symbol foo baz)
 
-(add-synonym-symbol bar cons)
+(ls:add-synonym-symbol bar cons)
 
-(deftest synonym-symbol-works
+(deftest/each synonym-symbol-works
   (symbolp (rtfs "foo"))
   (eq (rtfs "foo") (rtfs "baz"))
   (eq (rtfs "bar") (rtfs "cons")))
@@ -160,13 +125,13 @@
 
 ;; (clear-synonym-symbols)
 
-;; (deftest synonym-symbol-removable
+;; (deftest/each synonym-symbol-removable
 ;;   (not (eq (rtfs "zot") (rtfs "zort")))
 ;;   (not (eq (rtfs "flee") (rtfs "baz"))))
 
-(setf (digit-separators *rt*) '(#\*))
+(setf (ls:digit-separators *rt*) '(#\*))
 
-(deftest number-readers
+(deftest/each number-readers
   (symbolp (rtfs "*"))
   (eql (- 1) (rtfs "-1"))
   (symbolp (rtfs "--1"))
@@ -192,7 +157,7 @@
   (signals-a error (rtfs "#oa"))
   (signals-a error (rtfs "#x ")))
 
-(deftest read-suppress
+(deftest/each read-suppress
   (eq (rtfs "a") (rtfs "#-(and) (progn lt:(bazbux))
                         a"))
   (progn (let ((*read-suppress* t))
@@ -201,20 +166,20 @@
          t)
   (signals-a ls::multiple-package-marker-error (rtfs "aa:bb:cc:dd")))
 
-(deftest trailing-keyword-read-form-in-package
-  (setf (trailing-package-marker *rt*) :read-form-in-package)
+(deftest/each trailing-keyword-read-form-in-package
+  (setf (ls:trailing-package-marker *rt*) :read-form-in-package)
   (equal (rtfs "(car (ls::new-symbol-please))")
          (rtfs "ls:(car (new-symbol-please))"))
   (equal (rtfs "ls:(car (new-symbol-please))")
          (rtfs "ls::(car (new-symbol-please))"))
   (null (rtfs "#+(or)irrelevent::t ()")))
 
-(deftest trailing-keyword-keyword
-  (setf (trailing-package-marker *rt*) :keyword)
+(deftest/each trailing-keyword-keyword
+  (setf (ls:trailing-package-marker *rt*) :keyword)
   (equal (rtfs ":foo") (rtfs "foo:"))
   (equal (rtfs "foo: ") (rtfs "foo:("))
   (signals-a error (rtfs "foo:: ")))
 
-(deftest trailing-keyword-nil
-  (prog1 t (setf (trailing-package-marker *rt*) ()))
+(deftest/each trailing-keyword-nil
+  (prog1 t (setf (ls:trailing-package-marker *rt*) ()))
   (signals-a ls::trailing-package-marker-error (rtfs "foo: (")))
