@@ -192,7 +192,8 @@ only active for reading symbols.)"
 
 ;;;; A Readtable
 
-(defun rt (&optional (rt (load-time-value (copy-readtable nil))))
+(defun rt (&key (rt (load-time-value (copy-readtable nil)))
+             (token-reader #'token-reader))
   "Return copy of ReadTable with lazy-susan features enabled. ASCII only.
   This sets non-whitespace, non-macro, visible ASCII characters
   excepting backslash, to be the lazy-susan's token-reader. Better
@@ -210,7 +211,7 @@ only active for reading symbols.)"
           "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
           unless (or (get-macro-character char rt)
                      (whitespacep char)) do
-          (set-macro-character char #'token-reader t rt))
+          (set-macro-character char token-reader t rt))
     (set-macro-character #\" #'string-reader () rt)
     (set-macro-character #\( #'list-reader () rt)
     (set-macro-character #\) #'close-paren-reader () rt)
